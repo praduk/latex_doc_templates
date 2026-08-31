@@ -1,0 +1,20 @@
+% Synthetic marking-system test. Run with LuaLaTeX -draftmode only.
+% This file contains no controlled or classified information.
+\documentclass[letterpaper]{article}
+\usepackage{linearspace-markings}
+\LSMarkingSetup{
+  profile=unclassified,
+  classification=none,
+  controls={}
+}
+\begin{document}
+\ExplSyntaxOn
+\tl_set:Nx \l_tmpa_tl {\LSBannerText}
+\tl_if_eq:NnF \l_tmpa_tl {UNCLASSIFIED}
+  {\PackageError{linearspace-test}{UNCLASSIFIED~banner~regression}{}}
+\tl_set:Nx \l_tmpa_tl {\LSBannerColor}
+\tl_if_eq:NnF \l_tmpa_tl {LSUnclassifiedGreen}
+  {\PackageError{linearspace-test}{UNCLASSIFIED~banner-color~regression}{}}
+\ExplSyntaxOff
+\LSU{Synthetic unclassified portion-mark renderer test.}
+\end{document}

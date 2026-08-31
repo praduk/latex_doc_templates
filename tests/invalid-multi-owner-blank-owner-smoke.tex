@@ -1,0 +1,11 @@
+% Expected failure before shipout: every proprietary owner needs a reviewed name.
+\documentclass[letterpaper]{article}
+\usepackage{linearspace-markings}
+\LSMarkingSetup{
+  profile=corporate,
+  classification=none,
+  controls={proprietary},
+  proprietary-mode=multi-owner
+}
+\LSDeclareProprietaryOwner{}{Synthetic reviewed legend.}
+\begin{document}This content must never render.\end{document}

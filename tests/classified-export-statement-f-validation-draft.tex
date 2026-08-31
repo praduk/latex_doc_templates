@@ -1,0 +1,46 @@
+% Synthetic marking-system test. Run with LuaLaTeX -draftmode only.
+% This file contains no classified or controlled information.
+\documentclass{linearspace-report}
+
+\LSSetup{
+  title={Synthetic Classified Export Validation},
+  subtitle={Distribution Statement F scope regression},
+  short-title={Synthetic Statement F Validation},
+  author={Linear Space Test Suite},
+  organization={Linear Space},
+  document-id={LS-TEST-CLASSIFIED-F-0001},
+  revision={A},
+  status={Synthetic Test Only},
+  date={30 August 2026}
+}
+
+\LSMarkingSetup{
+  profile=classified-dod,
+  classification=secret,
+  controls={ear},
+  operator-confirms-controlled-environment=true,
+  operator-confirms-classified-environment=true,
+  banner-text={SECRET},
+  export-jurisdiction={EAR},
+  export-classification={Synthetic reviewed classification},
+  export-authorization={Synthetic validation hold},
+  export-destination={Not authorized for release},
+  export-end-user={Not authorized for release},
+  export-end-use={Synthetic validation only},
+  export-contact={test@example.invalid},
+  export-review-date={30 AUG 2026},
+  authority-type=derivative,
+  classified-by={Synthetic Test Classifier},
+  derived-from={Synthetic Test Security Classification Guide},
+  declassify-on={30 AUG 2036},
+  distribution-code=F,
+  distribution-date={30 AUG 2026},
+  distribution-office={Synthetic Program Office},
+  operator-confirms-dod-distribution-authority=true,
+  dod-export-controlled-technical-information=true
+}
+
+\begin{document}
+\LSMakeReportTitle
+\LSS{Synthetic classification-marking renderer text; not classified.}
+\end{document}

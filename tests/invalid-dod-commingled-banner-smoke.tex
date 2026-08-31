@@ -1,0 +1,23 @@
+% Expected failure before shipout: DoD classified banners do not include CUI.
+% This file contains no classified information.
+\documentclass[letterpaper]{article}
+\usepackage{linearspace-markings}
+\LSMarkingSetup{
+  profile=classified-dod,
+  classification=secret,
+  controls={cui},
+  operator-confirms-controlled-environment=true,
+  operator-confirms-classified-environment=true,
+  banner-text={SECRET//CUI},
+  controlled-by={Synthetic DoD Component},
+  controlled-office={Synthetic Program Office},
+  cui-categories={Controlled Technical Information},
+  distribution-dissemination-control={NONE},
+  control-poc={test@example.invalid},
+  authority-type=derivative,
+  classified-by={Synthetic Test Classifier},
+  derived-from={Synthetic Test Security Classification Guide},
+  declassify-on={30 AUG 2036},
+  classified-cui-source={the synthetic test classification guide}
+}
+\begin{document}Synthetic test.\end{document}

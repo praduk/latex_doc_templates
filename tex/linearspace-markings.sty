@@ -1,0 +1,2174 @@
+\NeedsTeXFormat{LaTeX2e}[2022-11-01]
+\ProvidesPackage{linearspace-markings}[2026/08/30 Layered handling and security markings]
+
+\RequirePackage{linearspace-brand}
+\RequirePackage{expl3}
+\RequirePackage{xparse}
+\RequirePackage{tikz}
+\RequirePackage{array}
+\RequirePackage[most]{tcolorbox}
+
+% A dark, white-text-safe status color reserved for the explicit
+% UNCLASSIFIED page banner (WCAG contrast against white is greater than 7:1).
+\definecolor{LSUnclassifiedGreen}{HTML}{1B5E3C}
+
+\ExplSyntaxOn
+
+% ---------------------------------------------------------------------------
+% Shared document metadata
+% ---------------------------------------------------------------------------
+\tl_new:N \g_ls_title_tl
+\tl_new:N \g_ls_subtitle_tl
+\tl_new:N \g_ls_short_title_tl
+\tl_new:N \g_ls_author_tl
+\tl_new:N \g_ls_organization_tl
+\tl_new:N \g_ls_document_id_tl
+\tl_new:N \g_ls_revision_tl
+\tl_new:N \g_ls_status_tl
+\tl_new:N \g_ls_date_tl
+\tl_new:N \g_ls_project_tl
+\tl_new:N \g_ls_client_tl
+
+\tl_gset:Nn \g_ls_title_tl {Untitled~Document}
+\tl_gset:Nn \g_ls_short_title_tl {Untitled~Document}
+\tl_gset:Nn \g_ls_author_tl {Author}
+\tl_gset:Nn \g_ls_organization_tl {Linear~Space}
+\tl_gset:Nn \g_ls_document_id_tl {LS-DOC-0000}
+\tl_gset:Nn \g_ls_revision_tl {A}
+\tl_gset:Nn \g_ls_status_tl {Draft}
+\tl_gset:Nn \g_ls_date_tl {\today}
+
+\keys_define:nn {linearspace/meta}
+  {
+    title        .tl_gset:N = \g_ls_title_tl,
+    subtitle     .tl_gset:N = \g_ls_subtitle_tl,
+    short-title  .tl_gset:N = \g_ls_short_title_tl,
+    author       .tl_gset:N = \g_ls_author_tl,
+    organization .tl_gset:N = \g_ls_organization_tl,
+    document-id  .tl_gset:N = \g_ls_document_id_tl,
+    revision     .tl_gset:N = \g_ls_revision_tl,
+    status       .tl_gset:N = \g_ls_status_tl,
+    date         .tl_gset:N = \g_ls_date_tl,
+    project      .tl_gset:N = \g_ls_project_tl,
+    client       .tl_gset:N = \g_ls_client_tl,
+  }
+
+\NewDocumentCommand{\LSSetup}{m}{\keys_set:nn {linearspace/meta}{#1}}
+\NewExpandableDocumentCommand{\LSTitle}{}{\tl_use:N \g_ls_title_tl}
+\NewExpandableDocumentCommand{\LSSubtitle}{}{\tl_use:N \g_ls_subtitle_tl}
+\NewExpandableDocumentCommand{\LSShortTitle}{}{\tl_use:N \g_ls_short_title_tl}
+\NewExpandableDocumentCommand{\LSAuthor}{}{\tl_use:N \g_ls_author_tl}
+\NewExpandableDocumentCommand{\LSOrganization}{}{\tl_use:N \g_ls_organization_tl}
+\NewExpandableDocumentCommand{\LSDocumentID}{}{\tl_use:N \g_ls_document_id_tl}
+\NewExpandableDocumentCommand{\LSRevision}{}{\tl_use:N \g_ls_revision_tl}
+\NewExpandableDocumentCommand{\LSStatus}{}{\tl_use:N \g_ls_status_tl}
+\NewExpandableDocumentCommand{\LSDate}{}{\tl_use:N \g_ls_date_tl}
+\NewExpandableDocumentCommand{\LSProject}{}{\tl_use:N \g_ls_project_tl}
+\NewExpandableDocumentCommand{\LSClient}{}{\tl_use:N \g_ls_client_tl}
+\NewDocumentCommand{\LSIfBlankTF}{m +m +m}{\tl_if_blank:eTF {#1}{#2}{#3}}
+
+% ---------------------------------------------------------------------------
+% Marking state. These layers are deliberately separate; they are not synonyms.
+% ---------------------------------------------------------------------------
+\tl_new:N \g_ls_profile_tl
+\tl_new:N \g_ls_classification_tl
+\clist_new:N \g_ls_controls_clist
+\tl_new:N \g_ls_banner_tl
+\tl_new:N \g_ls_banner_color_tl
+\bool_new:N \g_ls_authorized_controlled_bool
+\bool_new:N \g_ls_authorized_classified_bool
+\bool_new:N \g_ls_render_page_banners_bool
+\bool_new:N \g_ls_alternate_banner_renderer_bool
+\bool_new:N \g_ls_alternate_banner_rendered_bool
+\bool_new:N \g_ls_marking_notices_rendered_bool
+\bool_new:N \g_ls_dod_release_notice_rendered_bool
+\bool_new:N \g_ls_classification_block_rendered_bool
+\bool_new:N \g_ls_presentation_mode_bool
+\bool_new:N \g_ls_config_frozen_bool
+\bool_new:N \g_ls_oca_acknowledged_bool
+\bool_new:N \g_ls_public_release_approved_bool
+\bool_new:N \g_ls_dod_distribution_authority_bool
+\bool_new:N \g_ls_dod_export_technical_information_bool
+\tl_new:N \g_ls_dod_export_determination_tl
+\bool_new:N \l_ls_compact_notices_bool
+\bool_new:N \l_ls_export_ear_bool
+\bool_new:N \l_ls_export_itar_bool
+\int_new:N \l_ls_notice_count_int
+\int_new:N \g_ls_shipout_page_int
+\int_new:N \g_ls_notice_deadline_int
+\box_new:N \l_ls_banner_measure_box
+\tl_new:N \l_ls_banner_candidate_tl
+\tl_new:N \l_ls_banner_string_tl
+\tl_new:N \l_ls_banner_upper_tl
+\tl_new:N \l_ls_validation_string_tl
+\clist_new:N \l_ls_distribution_categories_clist
+\clist_new:N \l_ls_distribution_categories_canonical_clist
+
+\tl_new:N \g_ls_controlled_by_tl
+\tl_new:N \g_ls_controlled_office_tl
+\tl_new:N \g_ls_cui_categories_tl
+\tl_new:N \g_ls_limited_dissemination_tl
+\tl_new:N \g_ls_control_poc_tl
+\tl_new:N \g_ls_export_jurisdiction_tl
+\tl_new:N \g_ls_export_classification_tl
+\tl_new:N \g_ls_export_authorization_tl
+\tl_new:N \g_ls_export_destination_tl
+\tl_new:N \g_ls_export_end_user_tl
+\tl_new:N \g_ls_export_end_use_tl
+\tl_new:N \g_ls_export_contact_tl
+\tl_new:N \g_ls_export_review_date_tl
+
+\tl_new:N \g_ls_authority_type_tl
+\tl_new:N \g_ls_classified_by_tl
+\tl_new:N \g_ls_classification_reason_tl
+\tl_new:N \g_ls_derived_from_tl
+\tl_new:N \g_ls_declassify_on_tl
+\tl_new:N \g_ls_classified_cui_warning_tl
+\tl_new:N \g_ls_classified_cui_source_tl
+\tl_new:N \g_ls_classified_cui_contact_tl
+
+\tl_new:N \g_ls_proprietary_notice_tl
+\tl_new:N \g_ls_proprietary_mode_tl
+\seq_new:N \g_ls_proprietary_owner_keys_seq
+\prop_new:N \g_ls_proprietary_owner_display_prop
+\prop_new:N \g_ls_proprietary_owner_legend_prop
+\tl_new:N \g_ls_export_notice_tl
+\tl_new:N \g_ls_distribution_code_tl
+\tl_new:N \g_ls_distribution_category_tl
+\tl_new:N \g_ls_distribution_date_tl
+\tl_new:N \g_ls_distribution_office_tl
+\tl_new:N \g_ls_legacy_distribution_tl
+\tl_new:N \g_ls_custom_notice_tl
+\tl_new:N \g_ls_document_banner_tl
+
+\tl_gset:Nn \g_ls_profile_tl {uncontrolled}
+\tl_gset:Nn \g_ls_classification_tl {none}
+\tl_gset:Nn \g_ls_authority_type_tl {none}
+\tl_gset:Nn \g_ls_distribution_code_tl {none}
+\tl_gset:Nn \g_ls_proprietary_mode_tl {single-owner}
+\tl_gset:Nn \g_ls_banner_color_tl {LSBlue}
+\bool_gset_false:N \g_ls_authorized_controlled_bool
+\bool_gset_false:N \g_ls_authorized_classified_bool
+\bool_gset_true:N \g_ls_render_page_banners_bool
+\bool_gset_false:N \g_ls_alternate_banner_renderer_bool
+\bool_gset_false:N \g_ls_alternate_banner_rendered_bool
+\bool_gset_false:N \g_ls_marking_notices_rendered_bool
+\bool_gset_false:N \g_ls_dod_release_notice_rendered_bool
+\bool_gset_false:N \g_ls_classification_block_rendered_bool
+\bool_gset_false:N \g_ls_presentation_mode_bool
+\bool_gset_false:N \g_ls_config_frozen_bool
+\bool_gset_false:N \g_ls_oca_acknowledged_bool
+\bool_gset_false:N \g_ls_public_release_approved_bool
+\bool_gset_false:N \g_ls_dod_distribution_authority_bool
+\bool_gset_false:N \g_ls_dod_export_technical_information_bool
+\tl_gclear:N \g_ls_dod_export_determination_tl
+\int_gzero:N \g_ls_shipout_page_int
+\int_gset:Nn \g_ls_notice_deadline_int {1}
+\tl_gset:Nn \g_ls_proprietary_notice_tl
+  {
+    This~document~contains~confidential~and~proprietary~information~of~
+    \LSOrganization.~Use~or~disclosure~is~permitted~only~as~authorized~by~
+    written~agreement~with~\LSOrganization.~No~license~or~other~rights~are~
+    granted~by~disclosure.
+  }
+\tl_gset:Nn \g_ls_export_notice_tl
+  {
+    Export~jurisdiction,~classification,~authorization,~destination,~end-user,~
+    and~end-use~must~be~reviewed~before~release.~The~labels~EAR~and~ITAR~do~not,~
+    by~themselves,~authorize~access,~transfer,~or~export.
+  }
+
+\keys_define:nn {linearspace/markings}
+  {
+    profile .choices:nn =
+      {uncontrolled,unclassified,corporate,cui-general,cui-dod,classified-general,classified-dod}
+      {\tl_gset:Nx \g_ls_profile_tl {\l_keys_choice_tl}},
+    classification .choices:nn = {none,confidential,secret,top-secret}
+      {\tl_gset:Nx \g_ls_classification_tl {\l_keys_choice_tl}},
+    controls                      .clist_gset:N = \g_ls_controls_clist,
+    banner-text                   .tl_gset:N = \g_ls_banner_tl,
+    operator-confirms-controlled-environment .bool_gset:N = \g_ls_authorized_controlled_bool,
+    operator-confirms-classified-environment .bool_gset:N = \g_ls_authorized_classified_bool,
+    render-page-banners           .bool_gset:N = \g_ls_render_page_banners_bool,
+    controlled-by                 .tl_gset:N = \g_ls_controlled_by_tl,
+    controlled-office             .tl_gset:N = \g_ls_controlled_office_tl,
+    cui-categories                .tl_gset:N = \g_ls_cui_categories_tl,
+    distribution-dissemination-control .tl_gset:N = \g_ls_limited_dissemination_tl,
+    limited-dissemination         .tl_gset:N = \g_ls_limited_dissemination_tl,
+    control-poc                   .tl_gset:N = \g_ls_control_poc_tl,
+    export-jurisdiction           .tl_gset:N = \g_ls_export_jurisdiction_tl,
+    export-classification         .tl_gset:N = \g_ls_export_classification_tl,
+    export-authorization          .tl_gset:N = \g_ls_export_authorization_tl,
+    export-destination            .tl_gset:N = \g_ls_export_destination_tl,
+    export-end-user               .tl_gset:N = \g_ls_export_end_user_tl,
+    export-end-use                .tl_gset:N = \g_ls_export_end_use_tl,
+    export-contact                .tl_gset:N = \g_ls_export_contact_tl,
+    export-review-date            .tl_gset:N = \g_ls_export_review_date_tl,
+    authority-type .choices:nn = {none,original,derivative}
+      {\tl_gset:Nx \g_ls_authority_type_tl {\l_keys_choice_tl}},
+    classified-by                 .tl_gset:N = \g_ls_classified_by_tl,
+    classification-reason         .tl_gset:N = \g_ls_classification_reason_tl,
+    derived-from                  .tl_gset:N = \g_ls_derived_from_tl,
+    declassify-on                 .tl_gset:N = \g_ls_declassify_on_tl,
+    classification-date .code:n =
+      {\ls_error:nn {classification-date~is~not~an~authority-block~field}
+        {Use~the~document's~date~metadata;~do~not~add~nonstandard~rows~to~the~classification~authority~block.}},
+    original-classification-authority-confirmed .bool_gset:N = \g_ls_oca_acknowledged_bool,
+    classified-cui-warning        .tl_gset:N = \g_ls_classified_cui_warning_tl,
+    classified-cui-source         .tl_gset:N = \g_ls_classified_cui_source_tl,
+    classified-cui-contact        .tl_gset:N = \g_ls_classified_cui_contact_tl,
+    public-release-approved       .bool_gset:N = \g_ls_public_release_approved_bool,
+    operator-confirms-dod-distribution-authority .bool_gset:N = \g_ls_dod_distribution_authority_bool,
+    dod-export-controlled-technical-information .choices:nn = {true,false}
+      {
+        \str_if_eq:VnTF \l_keys_choice_tl {true}
+          {
+            \bool_gset_true:N \g_ls_dod_export_technical_information_bool
+            \tl_gset:Nn \g_ls_dod_export_determination_tl {applies}
+          }
+          {
+            \bool_gset_false:N \g_ls_dod_export_technical_information_bool
+            \tl_gset:Nn \g_ls_dod_export_determination_tl {does-not-apply}
+          }
+      },
+    distribution-code .choices:nn = {none,A,B,C,D,E,F}
+      {\tl_gset:Nx \g_ls_distribution_code_tl {\l_keys_choice_tl}},
+    distribution-category        .tl_gset:N = \g_ls_distribution_category_tl,
+    distribution-categories      .tl_gset:N = \g_ls_distribution_category_tl,
+    distribution-date            .tl_gset:N = \g_ls_distribution_date_tl,
+    distribution-office          .tl_gset:N = \g_ls_distribution_office_tl,
+    proprietary-mode .choices:nn = {single-owner,multi-owner}
+      {\tl_gset:Nx \g_ls_proprietary_mode_tl {\l_keys_choice_tl}},
+    proprietary-notice            .tl_gset:N = \g_ls_proprietary_notice_tl,
+    export-notice                 .tl_gset:N = \g_ls_export_notice_tl,
+    distribution-statement        .tl_gset:N = \g_ls_legacy_distribution_tl,
+    custom-notice                 .tl_gset:N = \g_ls_custom_notice_tl,
+  }
+
+\NewDocumentCommand{\LSMarkingSetup}{m}
+  {
+    \bool_if:NTF \g_ls_config_frozen_bool
+      {\ls_error:nn {Marking~configuration~is~frozen}
+        {Place~all~\string\LSMarkingSetup~calls~in~the~preamble.}}
+      {\keys_set:nn {linearspace/markings}{#1}}
+  }
+
+\msg_new:nnnn {linearspace-markings}{fatal}{#1}{#2}
+\cs_new_protected:Npn \ls_error:nn #1#2
+  {\msg_fatal:nnnn {linearspace-markings}{fatal}{#1}{#2}}
+
+\cs_new_protected:Npn \ls_freeze_expanded:N #1
+  {
+    \tl_set:Nx \l_tmpa_tl {\tl_use:N #1}
+    \tl_trim_spaces:N \l_tmpa_tl
+    \tl_gset:Nx #1 {\exp_not:V \l_tmpa_tl}
+  }
+
+\cs_new_protected:Npn \ls_reject_placeholder:Nn #1#2
+  {
+    \tl_set:Nx \l_ls_validation_string_tl
+      {\tl_upper_case:n {\tl_to_str:V #1}}
+    \regex_match:nVTF
+      {\A \s* ( \[ .* \] | YYYY-MM-DD | TBD | TODO | REPLACE ( \s+ ME )? ) \s* \Z}
+      \l_ls_validation_string_tl
+      {\ls_error:nn {Required~marking~field~'#2'~contains~a~placeholder}
+        {Replace~the~placeholder~with~the~reviewed~value~before~building~marked~output.}}
+      {}
+  }
+
+\cs_new_protected:Npn \ls_require_nonblank:Nn #1#2
+  {
+    \ls_freeze_expanded:N #1
+    \tl_if_blank:VTF #1
+      {\ls_error:nn {Required~marking~field~'#2'~is~blank}
+        {Supply~the~reviewed~field~through~\string\LSMarkingSetup.}}
+      {\ls_reject_placeholder:Nn #1 {#2}}
+  }
+
+\cs_new_protected:Npn \ls_require_blank:Nn #1#2
+  {
+    \ls_freeze_expanded:N #1
+    \tl_if_blank:VF #1
+      {\ls_error:nn {Marking~field~'#2'~does~not~apply}
+        {Remove~the~field~or~select~the~profile~and~structured~option~that~requires~it.}}
+  }
+
+\cs_generate_variant:Nn \prop_if_in:NnTF {NV}
+\cs_generate_variant:Nn \prop_gput:Nnn {NVV}
+
+% Multi-owner proprietary legends are declarations, rather than a comma-list
+% key, so each reviewed legend remains paired with exactly one named owner.
+% Declarations are order independent with respect to \LSMarkingSetup, but the
+% complete registry is validated and frozen when the document begins.
+\NewDocumentCommand{\LSDeclareProprietaryOwner}{m m}
+  {
+    \bool_if:NTF \g_ls_config_frozen_bool
+      {\ls_error:nn {Proprietary-owner~declarations~are~frozen}
+        {Place~every~\string\LSDeclareProprietaryOwner~call~in~the~preamble.}}
+      {
+        \tl_set:Nx \l_tmpa_tl {#1}
+        \tl_trim_spaces:N \l_tmpa_tl
+        \tl_if_blank:VTF \l_tmpa_tl
+          {\ls_error:nn {Proprietary~owner~name~is~blank}
+            {Supply~the~reviewed~legal~name~of~the~proprietary-data~owner.}}
+          {\ls_reject_placeholder:Nn \l_tmpa_tl {proprietary-owner}}
+
+        \tl_set:Nx \l_tmpc_tl {#2}
+        \tl_trim_spaces:N \l_tmpc_tl
+        \tl_if_blank:VTF \l_tmpc_tl
+          {\ls_error:nn {Proprietary~legend~or~disclosure~is~blank}
+            {Supply~the~reviewed~legend~or~disclosure~for~this~owner.}}
+          {\ls_reject_placeholder:Nn \l_tmpc_tl {proprietary-owner-legend}}
+
+        \tl_set:Nx \l_tmpb_tl
+          {\tl_upper_case:n {\tl_to_str:V \l_tmpa_tl}}
+        \regex_replace_all:nnN {\s+} {~} \l_tmpb_tl
+        \prop_if_in:NVTF \g_ls_proprietary_owner_display_prop \l_tmpb_tl
+          {\exp_args:Nx \ls_error:nn
+            {Proprietary~owner~'\tl_to_str:V \l_tmpa_tl'~is~declared~more~than~once}
+            {Declare~each~owner~once~and~attach~one~reviewed~legend~or~disclosure.}}
+          {
+            \seq_gput_right:NV \g_ls_proprietary_owner_keys_seq \l_tmpb_tl
+            \prop_gput:NVV
+              \g_ls_proprietary_owner_display_prop \l_tmpb_tl \l_tmpa_tl
+            \prop_gput:NVV
+              \g_ls_proprietary_owner_legend_prop \l_tmpb_tl \l_tmpc_tl
+          }
+      }
+  }
+
+\cs_new_protected:Npn \ls_validate_proprietary_owners:
+  {
+    \str_if_eq:VnTF \g_ls_proprietary_mode_tl {multi-owner}
+      {
+        \clist_if_in:NnF \g_ls_controls_clist {proprietary}
+          {\ls_error:nn {Multi-owner~proprietary~mode~requires~controls={proprietary}}
+            {Add~the~proprietary~control~only~when~the~declared~owners'~reviewed~legends~apply.}}
+        \int_compare:nNnT
+          {\seq_count:N \g_ls_proprietary_owner_keys_seq} < {2}
+          {\ls_error:nn {Multi-owner~proprietary~mode~requires~at~least~two~owners}
+            {Declare~each~owner~and~its~reviewed~legend~with~\string\LSDeclareProprietaryOwner.}}
+      }
+      {
+        \seq_if_empty:NF \g_ls_proprietary_owner_keys_seq
+          {\ls_error:nn {Proprietary-owner~declarations~require~proprietary-mode=multi-owner}
+            {Remove~the~declarations~for~single-owner~output,~or~select~multi-owner~mode~with~at~least~two~reviewed~owners.}}
+      }
+  }
+
+\prg_new_conditional:Npnn \ls_profile_classified: {T,F,TF}
+  {
+    \str_if_eq:VnTF \g_ls_profile_tl {classified-general}
+      {\prg_return_true:}
+      {
+        \str_if_eq:VnTF \g_ls_profile_tl {classified-dod}
+          {\prg_return_true:}
+          {\prg_return_false:}
+      }
+  }
+
+\prg_new_conditional:Npnn \ls_profile_cui: {T,F,TF}
+  {
+    \str_if_eq:VnTF \g_ls_profile_tl {cui-general}
+      {\prg_return_true:}
+      {
+        \str_if_eq:VnTF \g_ls_profile_tl {cui-dod}
+          {\prg_return_true:}
+          {\prg_return_false:}
+      }
+  }
+
+\prg_new_conditional:Npnn \ls_controlled_content: {T,F,TF}
+  {
+    \clist_if_in:NnTF \g_ls_controls_clist {cui}
+      {\prg_return_true:}
+      {
+        \clist_if_in:NnTF \g_ls_controls_clist {ear}
+          {\prg_return_true:}
+          {
+            \clist_if_in:NnTF \g_ls_controls_clist {itar}
+              {\prg_return_true:}
+              {\prg_return_false:}
+          }
+      }
+  }
+
+\cs_generate_variant:Nn \regex_match:nnTF {nV}
+\cs_generate_variant:Nn \tl_if_in:nnTF {VV}
+\cs_generate_variant:Nn \clist_set:Nn {NV}
+\cs_generate_variant:Nn \clist_if_in:NnTF {NV}
+
+\cs_new_protected:Npn \ls_canonicalize_banner:n #1
+  {
+    \tl_set:Nx \l_ls_banner_candidate_tl {#1}
+    \tl_trim_spaces:N \l_ls_banner_candidate_tl
+    \tl_map_inline:Nn \l_ls_banner_candidate_tl
+      {
+        \token_if_cs:NT ##1
+          {\ls_error:nn {Banner~text~must~be~literal~plain~text}
+            {Do~not~place~macros~or~formatting~commands~in~banner-text~or~a~runtime~banner.}}
+      }
+    \tl_set:Nx \l_ls_banner_string_tl
+      {\tl_to_str:V \l_ls_banner_candidate_tl}
+    \tl_set:Nx \l_ls_banner_upper_tl
+      {\tl_upper_case:n {\tl_to_str:V \l_ls_banner_candidate_tl}}
+  }
+
+\cs_new_protected:Npn \ls_require_uppercase_banner:
+  {
+    \tl_if_eq:NNTF \l_ls_banner_string_tl \l_ls_banner_upper_tl
+      {}
+      {\ls_error:nn {Official~banner~text~must~use~uppercase~letters}
+        {Copy~the~exact~uppercase~banner~from~the~controlling~authority.}}
+  }
+
+\cs_new_protected:Npn \ls_reject_classification_words:
+  {
+    \regex_match:nVTF {TOP \s+ SECRET|SECRET|CONFIDENTIAL} \l_ls_banner_upper_tl
+      {\ls_error:nn {An~unclassified~profile~cannot~render~a~classification~banner}
+        {Remove~the~reserved~classification~word~or~select~an~authorized~classified~profile.}}
+      {}
+  }
+
+\cs_new_protected:Npn \ls_validate_banner_width:
+  {
+    \tl_if_blank:VF \l_ls_banner_candidate_tl
+      {
+        \hbox_set:Nn \l_ls_banner_measure_box
+          {\normalfont\sffamily\bfseries\fontsize{8.5}{9.5}\selectfont
+           \tl_use:N \l_ls_banner_candidate_tl}
+        \dim_compare:nNnT
+          {\box_wd:N \l_ls_banner_measure_box} > {\paperwidth - 12pt}
+          {\ls_error:nn {The~mandatory~banner~is~wider~than~the~page~or~slide}
+            {Shorten~only~as~authorized;~the~template~will~not~crop~or~silently~shrink~mandatory~text.}}
+      }
+  }
+
+\cs_new_protected:Npn \ls_validate_banner_profile:
+  {
+    \str_case:Vn \g_ls_profile_tl
+      {
+        {uncontrolled}
+          {
+            \tl_if_blank:VF \l_ls_banner_candidate_tl
+              {\ls_error:nn {The~uncontrolled~profile~requires~a~blank~banner}
+                {Use~a~controlled,~corporate,~CUI,~or~classified~profile~only~when~authorized.}}
+          }
+        {unclassified}
+          {
+            \ls_require_uppercase_banner:
+            \str_if_eq:VnF \l_ls_banner_string_tl {UNCLASSIFIED}
+              {\ls_error:nn {The~unclassified~profile~requires~the~exact~banner~UNCLASSIFIED}
+                {Use~UNCLASSIFIED~only~when~the~document~contains~no~CUI~or~classified~information.}}
+          }
+        {corporate}
+          {
+            \clist_if_in:NnTF \g_ls_controls_clist {proprietary}
+              {
+                \str_if_eq:VnTF \g_ls_proprietary_mode_tl {multi-owner}
+                  {
+                    \str_if_eq:VnF \l_ls_banner_string_tl
+                      {PROPRIETARY,~SEE~TITLE~PAGE}
+                      {\ls_error:nn {The~multi-owner~corporate~proprietary~banner~must~be~exact}
+                        {Use~PROPRIETARY,~SEE~TITLE~PAGE;~the~title-page~notice~lists~each~owner~and~reviewed~legend.}}
+                  }
+                  {
+                    \str_if_eq:VnF \l_ls_banner_string_tl {LINEAR~SPACE~PROPRIETARY}
+                      {\ls_error:nn {The~corporate~proprietary~banner~must~be~exact}
+                        {Use~LINEAR~SPACE~PROPRIETARY;~put~other~handling~text~in~the~appropriate~notice.}}
+                  }
+              }
+              {
+                \tl_if_blank:VF \l_ls_banner_candidate_tl
+                  {\ls_error:nn {A~non-proprietary~corporate~profile~requires~a~blank~banner}
+                    {EAR~and~ITAR~are~not~universal~page-banner~markings.}}
+              }
+            \ls_reject_classification_words:
+            \regex_match:nVTF {CUI|CONTROLLED} \l_ls_banner_upper_tl
+              {\ls_error:nn {A~corporate~profile~cannot~render~a~CUI~banner}
+                {Use~a~CUI~profile~only~when~the~controlling~authority~requires~CUI.}}
+              {}
+          }
+        {cui-general}
+          {
+            \ls_require_uppercase_banner:
+            \regex_match:nVTF {\A \s* (CUI|CONTROLLED) (\s* /|\s* \Z)}
+              \l_ls_banner_upper_tl
+              {}
+              {\ls_error:nn {The~general~CUI~banner~has~an~invalid~control~prefix}
+                {Begin~with~the~authority-approved~CUI~or~CONTROLLED~marking.}}
+            \ls_reject_classification_words:
+          }
+        {cui-dod}
+          {
+            \ls_require_uppercase_banner:
+            \str_if_eq:VnF \l_ls_banner_string_tl {CUI}
+              {\ls_error:nn {The~DoD~CUI~profile~requires~the~exact~banner~CUI}
+                {Use~CUI~alone~at~the~top~and~bottom;~put~categories~and~controls~in~the~designation~indicator.}}
+          }
+        {classified-general}
+          {\ls_validate_classified_banner:}
+        {classified-dod}
+          {\ls_validate_classified_banner:}
+      }
+  }
+
+\cs_new_protected:Npn \ls_validate_classified_banner:
+  {
+    \ls_require_uppercase_banner:
+    \str_if_eq:VnTF \g_ls_classification_tl {top-secret}
+      {
+        \regex_match:nVTF {\A \s* TOP \s+ SECRET (\s* /|\s* \Z)}
+          \l_ls_banner_upper_tl
+          {}
+          {\ls_error:nn {The~banner~would~remove~or~lower~TOP~SECRET}
+            {Keep~the~authority-approved~TOP~SECRET~prefix.}}
+        \regex_match:nVTF {CONFIDENTIAL} \l_ls_banner_upper_tl
+          {\ls_error:nn {The~TOP~SECRET~banner~contains~a~conflicting~classification~term}
+            {Use~the~exact~authority-approved~banner~without~a~lower~classification~level.}}
+          {}
+      }
+      {
+        \str_if_eq:VnTF \g_ls_classification_tl {secret}
+          {
+            \regex_match:nVTF {\A \s* SECRET (\s* /|\s* \Z)}
+              \l_ls_banner_upper_tl
+              {}
+              {\ls_error:nn {The~banner~would~remove~SECRET}
+                {Keep~the~authority-approved~SECRET~prefix.}}
+            \regex_match:nVTF {TOP \s+ SECRET|CONFIDENTIAL} \l_ls_banner_upper_tl
+              {\ls_error:nn {The~SECRET~banner~contains~a~conflicting~classification~term}
+                {Use~the~exact~authority-approved~SECRET~banner.}}
+              {}
+          }
+          {
+            \bool_set_false:N \l_tmpa_bool
+            \str_if_eq:VnT \g_ls_profile_tl {classified-general}
+              {\clist_if_in:NnT \g_ls_controls_clist {cui}
+                {\bool_set_true:N \l_tmpa_bool}}
+            \bool_if:NTF \l_tmpa_bool
+              {
+                \regex_match:nVTF
+                  {\A \s* CONFIDENTIAL \s* // \s* CUI (\s* /|\s* \Z)}
+                  \l_ls_banner_upper_tl
+                  {}
+                  {\ls_error:nn
+                    {The~classified-general~CONFIDENTIAL+CUI~banner~has~the~wrong~prefix}
+                    {Begin~with~the~exact~authority-approved~prefix~CONFIDENTIAL//CUI.}}
+              }
+              {
+                \regex_match:nVTF {\A \s* CONFIDENTIAL (\s* /|\s* \Z)}
+                  \l_ls_banner_upper_tl
+                  {}
+                  {\ls_error:nn {The~banner~would~remove~CONFIDENTIAL}
+                    {Keep~the~authority-approved~CONFIDENTIAL~prefix.}}
+              }
+            \regex_match:nVTF {TOP \s+ SECRET|SECRET} \l_ls_banner_upper_tl
+              {\ls_error:nn
+                {The~CONFIDENTIAL~banner~contains~a~conflicting~classification~term}
+                {Use~the~exact~authority-approved~CONFIDENTIAL~banner.}}
+              {}
+          }
+      }
+    \str_if_eq:VnTF \g_ls_profile_tl {classified-dod}
+      {
+        \regex_match:nVTF {CUI|CONTROLLED} \l_ls_banner_upper_tl
+          {\ls_error:nn {DoD~classified~banners~must~not~contain~CUI}
+            {Use~the~classified~banner,~the~prescribed~first-page~warning,~and~CUI~portion~marks.}}
+          {}
+      }
+      {
+        \clist_if_in:NnTF \g_ls_controls_clist {cui}
+          {
+            \regex_match:nVTF {// \s* CUI (\s* /|\s* \Z)} \l_ls_banner_upper_tl
+              {}
+              {\ls_error:nn {General~classified+CUI~output~requires~CUI~in~the~banner}
+                {Use~the~exact~agency-approved~commingled~banner,~for~example~SECRET//CUI.}}
+          }
+          {
+            \regex_match:nVTF {CUI|CONTROLLED} \l_ls_banner_upper_tl
+              {\ls_error:nn {The~banner~declares~CUI~but~controls~does~not}
+                {Add~cui~only~when~authorized,~or~remove~the~CUI~marking.}}
+              {}
+          }
+      }
+  }
+
+\cs_new_protected:Npn \ls_validate_banner_value:n #1
+  {
+    \ls_canonicalize_banner:n {#1}
+    \ls_validate_banner_profile:
+    \bool_if:NT \g_ls_config_frozen_bool
+      {
+        \bool_set_false:N \l_tmpa_bool
+        \ls_profile_cui:T {\bool_set_true:N \l_tmpa_bool}
+        \str_if_eq:VnT \g_ls_profile_tl {classified-general}
+          {\clist_if_in:NnT \g_ls_controls_clist {cui}
+            {\bool_set_true:N \l_tmpa_bool}}
+        \bool_if:NT \l_tmpa_bool
+          {
+            \tl_if_eq:NNTF \l_ls_banner_candidate_tl \g_ls_document_banner_tl
+              {}
+              {\ls_error:nn {A~CUI-bearing~document~must~use~one~inclusive~banner~on~every~page}
+                {Runtime~page~or~slide~overrides~must~exactly~match~the~validated~document~banner.}}
+          }
+      }
+    \ls_validate_banner_width:
+  }
+
+\cs_new_protected:Npn \ls_freeze_marking_fields:
+  {
+    \ls_freeze_expanded:N \g_ls_controlled_by_tl
+    \ls_freeze_expanded:N \g_ls_controlled_office_tl
+    \ls_freeze_expanded:N \g_ls_cui_categories_tl
+    \ls_freeze_expanded:N \g_ls_limited_dissemination_tl
+    \ls_freeze_expanded:N \g_ls_control_poc_tl
+    \ls_freeze_expanded:N \g_ls_export_jurisdiction_tl
+    \ls_freeze_expanded:N \g_ls_export_classification_tl
+    \ls_freeze_expanded:N \g_ls_export_authorization_tl
+    \ls_freeze_expanded:N \g_ls_export_destination_tl
+    \ls_freeze_expanded:N \g_ls_export_end_user_tl
+    \ls_freeze_expanded:N \g_ls_export_end_use_tl
+    \ls_freeze_expanded:N \g_ls_export_contact_tl
+    \ls_freeze_expanded:N \g_ls_export_review_date_tl
+    \ls_freeze_expanded:N \g_ls_classified_by_tl
+    \ls_freeze_expanded:N \g_ls_classification_reason_tl
+    \ls_freeze_expanded:N \g_ls_derived_from_tl
+    \ls_freeze_expanded:N \g_ls_declassify_on_tl
+    \ls_freeze_expanded:N \g_ls_classified_cui_warning_tl
+    \ls_freeze_expanded:N \g_ls_classified_cui_source_tl
+    \ls_freeze_expanded:N \g_ls_classified_cui_contact_tl
+    \ls_freeze_expanded:N \g_ls_distribution_category_tl
+    \ls_freeze_expanded:N \g_ls_distribution_date_tl
+    \ls_freeze_expanded:N \g_ls_distribution_office_tl
+    \ls_freeze_expanded:N \g_ls_legacy_distribution_tl
+    \ls_freeze_expanded:N \g_ls_custom_notice_tl
+  }
+
+\cs_new_protected:Npn \ls_prepare_document_banner:
+  {
+    \ls_canonicalize_banner:n {\tl_use:N \g_ls_banner_tl}
+    \str_if_eq:VnT \g_ls_profile_tl {unclassified}
+      {\tl_if_blank:VT \l_ls_banner_candidate_tl
+        {\ls_canonicalize_banner:n {UNCLASSIFIED}}}
+    \str_if_eq:VnT \g_ls_profile_tl {corporate}
+      {
+        \clist_if_in:NnT \g_ls_controls_clist {proprietary}
+          {
+            \tl_if_blank:VT \l_ls_banner_candidate_tl
+              {
+                \str_if_eq:VnTF \g_ls_proprietary_mode_tl {multi-owner}
+                  {\ls_canonicalize_banner:n {PROPRIETARY,~SEE~TITLE~PAGE}}
+                  {\ls_canonicalize_banner:n {LINEAR~SPACE~PROPRIETARY}}
+              }
+          }
+      }
+    \ls_validate_banner_profile:
+    \ls_validate_banner_width:
+    \tl_gset:Nx \g_ls_banner_tl {\exp_not:V \l_ls_banner_candidate_tl}
+    \tl_gset:Nx \g_ls_document_banner_tl {\exp_not:V \l_ls_banner_candidate_tl}
+  }
+
+\cs_new_protected:Npn \ls_validate_distribution:
+  {
+    \tl_if_blank:VF \g_ls_legacy_distribution_tl
+      {\ls_error:nn {Raw~distribution-statement~text~is~disabled}
+        {Use~distribution-code~with~the~structured~category,~date,~and~office~fields;~use~custom-notice~for~non-DoD~text.}}
+    \str_case:Vn \g_ls_distribution_code_tl
+      {
+        {none}
+          {
+            \ls_require_blank:Nn \g_ls_distribution_category_tl {distribution-category}
+            \ls_require_blank:Nn \g_ls_distribution_date_tl {distribution-date}
+            \ls_require_blank:Nn \g_ls_distribution_office_tl {distribution-office}
+          }
+        {A}
+          {
+            \bool_if:NF \g_ls_dod_distribution_authority_bool
+              {\ls_error:nn {Distribution~Statement~A~requires~DoD~authority~confirmation}
+                {Set~operator-confirms-dod-distribution-authority=true~only~after~the~controlling~DoD~office's~determination.}}
+            \bool_if:NF \g_ls_public_release_approved_bool
+              {\ls_error:nn {Distribution~Statement~A~requires~public-release~approval}
+                {Set~public-release-approved=true~only~after~the~competent~authority~approves~release.}}
+            \str_if_eq:VnF \g_ls_classification_tl {none}
+              {\ls_error:nn {Distribution~Statement~A~cannot~mark~classified~output}
+                {Use~the~controlling~DoD~office's~actual~B--F~determination.}}
+            \clist_if_empty:NF \g_ls_controls_clist
+              {\ls_error:nn {Distribution~Statement~A~cannot~accompany~declared~controls}
+                {Remove~Statement~A~or~decontrol~only~through~the~authorized~release~process.}}
+            \ls_require_blank:Nn \g_ls_distribution_category_tl {distribution-category}
+            \ls_require_blank:Nn \g_ls_distribution_date_tl {distribution-date}
+            \ls_require_blank:Nn \g_ls_distribution_office_tl {distribution-office}
+          }
+        {B}{\ls_validate_distribution_b_to_e:}
+        {C}{\ls_validate_distribution_b_to_e:}
+        {D}{\ls_validate_distribution_b_to_e:}
+        {E}{\ls_validate_distribution_b_to_e:}
+        {F}
+          {
+            \bool_if:NF \g_ls_dod_distribution_authority_bool
+              {\ls_error:nn {DoD~Distribution~Statement~F~requires~authority~confirmation}
+                {Set~operator-confirms-dod-distribution-authority=true~only~for~the~controlling~DoD~office's~determination.}}
+            \ls_require_blank:Nn \g_ls_distribution_category_tl {distribution-category}
+            \ls_require_nonblank:Nn \g_ls_distribution_date_tl {distribution-date}
+            \ls_require_nonblank:Nn \g_ls_distribution_office_tl {distribution-office}
+            \ls_validate_restricted_distribution_profile:
+          }
+      }
+    \str_if_eq:VnTF \g_ls_distribution_code_tl {A}
+      {}
+      {\bool_if:NT \g_ls_public_release_approved_bool
+        {\ls_error:nn {public-release-approved~applies~only~to~Distribution~Statement~A}
+          {Remove~the~stale~assertion~or~select~Statement~A~after~actual~approval.}}}
+    \str_if_eq:VnTF \g_ls_distribution_code_tl {none}
+      {\bool_if:NT \g_ls_dod_distribution_authority_bool
+        {\ls_error:nn {DoD~distribution-authority~confirmation~has~no~statement}
+          {Remove~the~stale~assertion~or~configure~the~controlling~office's~B--F~determination.}}}
+      {}
+  }
+
+\cs_new_protected:Npn \ls_validate_distribution_b_to_e:
+  {
+    \bool_if:NF \g_ls_dod_distribution_authority_bool
+      {\ls_error:nn {A~DoD~distribution~statement~requires~authority~confirmation}
+        {Set~operator-confirms-dod-distribution-authority=true~only~for~the~controlling~DoD~office's~determination.}}
+    \ls_validate_distribution_categories:
+    \ls_require_nonblank:Nn \g_ls_distribution_date_tl {distribution-date}
+    \ls_require_nonblank:Nn \g_ls_distribution_office_tl {distribution-office}
+    \ls_validate_restricted_distribution_profile:
+  }
+
+\cs_new_protected:Npn \ls_validate_distribution_categories:
+  {
+    \ls_require_nonblank:Nn \g_ls_distribution_category_tl {distribution-categories}
+    \clist_set:NV \l_ls_distribution_categories_clist
+      \g_ls_distribution_category_tl
+    \int_compare:nNnT
+      {\clist_count:N \l_ls_distribution_categories_clist} > {3}
+      {\ls_error:nn {A~DoD~distribution~statement~has~more~than~three~reasons}
+        {Use~one~to~three~controlling-office-approved~defense-category~headings.}}
+    \clist_clear:N \l_ls_distribution_categories_canonical_clist
+    \clist_map_inline:Nn \l_ls_distribution_categories_clist
+      {
+        \tl_set:Nn \l_tmpa_tl {##1}
+        \tl_trim_spaces:N \l_tmpa_tl
+        \ls_reject_placeholder:Nn \l_tmpa_tl {distribution-categories}
+        \exp_args:NV \ls_validate_distribution_category:n \l_tmpa_tl
+        \tl_set_eq:NN \l_tmpb_tl \l_tmpa_tl
+        \str_if_eq:VnT \l_tmpb_tl {CTI}
+          {\tl_set:Nn \l_tmpb_tl {Controlled~Technical~Information}}
+        \clist_put_right:NV
+          \l_ls_distribution_categories_canonical_clist \l_tmpb_tl
+        \str_case:Vn \l_tmpa_tl
+          {
+            {Export~Controlled}
+              {\bool_gset_true:N \g_ls_dod_export_technical_information_bool}
+            {Critical~Technology}
+              {\bool_gset_true:N \g_ls_dod_export_technical_information_bool}
+            {Direct~Military~Support}
+              {\bool_gset_true:N \g_ls_dod_export_technical_information_bool}
+          }
+      }
+    \clist_set_eq:NN \l_tmpa_clist
+      \l_ls_distribution_categories_canonical_clist
+    \clist_remove_duplicates:N \l_tmpa_clist
+    \int_compare:nNnF
+      {\clist_count:N \l_tmpa_clist} =
+      {\clist_count:N \l_ls_distribution_categories_canonical_clist}
+      {\ls_error:nn {A~DoD~distribution~statement~repeats~a~defense~category}
+        {List~each~controlling-office-approved~reason~once.}}
+  }
+
+\cs_new_protected:Npn \ls_validate_distribution_category_code:nn #1#2
+  {
+    \clist_set:Nn \l_tmpb_clist {#2}
+    \clist_if_in:NVTF \l_tmpb_clist \g_ls_distribution_code_tl
+      {}
+      {\exp_args:Nx \ls_error:nn
+        {Defense~category~'#1'~is~not~authorized~for~Distribution~Statement~\tl_use:N \g_ls_distribution_code_tl}
+        {Use~the~current~DoDI~5230.24~category/code~matrix~and~the~controlling~office's~determination.}}
+  }
+
+\cs_new_protected:Npn \ls_validate_distribution_category:n #1
+  {
+    \str_case:nnF {#1}
+      {
+        {CTI}{\ls_validate_distribution_category_code:nn {#1}{B,C,D,E}}
+        {Controlled~Technical~Information}
+          {\ls_validate_distribution_category_code:nn {#1}{B,C,D,E}}
+        {Contractor~Performance~Evaluation}
+          {\ls_validate_distribution_category_code:nn {#1}{B,E}}
+        {Critical~Technology}
+          {\ls_validate_distribution_category_code:nn {#1}{B,C,D,E}}
+        {Direct~Military~Support}
+          {\ls_validate_distribution_category_code:nn {#1}{E}}
+        {Export~Controlled}
+          {\ls_validate_distribution_category_code:nn {#1}{B,C,D,E}}
+        {Foreign~Government~Information}
+          {\ls_validate_distribution_category_code:nn {#1}{B,C,D,E}}
+        {IAs}{\ls_validate_distribution_category_code:nn {#1}{B,C,D,E}}
+        {Operations~Security}
+          {\ls_validate_distribution_category_code:nn {#1}{B,E}}
+        {Patents~and~Inventions}
+          {\ls_validate_distribution_category_code:nn {#1}{B,E}}
+        {Proprietary~Business~Information}
+          {\ls_validate_distribution_category_code:nn {#1}{B,E}}
+        {SBIR}{\ls_validate_distribution_category_code:nn {#1}{B,E}}
+        {Software~Documentation}
+          {\ls_validate_distribution_category_code:nn {#1}{B,C,D,E}}
+        {Test~and~Evaluation}
+          {\ls_validate_distribution_category_code:nn {#1}{B,E}}
+        {Vulnerability~Information}
+          {\ls_validate_distribution_category_code:nn {#1}{B,C,D,E}}
+      }
+      {\ls_error:nn {Unknown~DoD~defense-category~heading~'#1'}
+        {Use~an~exact~current~DoDI~5230.24~Section~4.3~heading~approved~by~the~controlling~office.}}
+  }
+
+\cs_new_protected:Npn \ls_validate_restricted_distribution_profile:
+  {
+    \str_if_eq:VnTF \g_ls_classification_tl {none}
+      {
+        \str_if_eq:VnF \g_ls_profile_tl {cui-dod}
+          {\ls_error:nn {Unclassified~DoD~Distribution~Statements~B--F~require~the~DoD~CUI~profile}
+            {Use~profile=cui-dod~and~controls={cui};~DoDI~5230.24~subjects~such~material~to~DoD~CUI~handling.}}
+        \clist_if_in:NnF \g_ls_controls_clist {cui}
+          {\ls_error:nn {Unclassified~DoD~Distribution~Statements~B--F~require~controls={cui}}
+            {Configure~the~DoD~CUI~fields~from~the~controlling~office's~determination.}}
+      }
+      {
+        \str_if_eq:VnF \g_ls_profile_tl {classified-dod}
+          {\ls_error:nn {A~classified~DoD~distribution~statement~requires~profile=classified-dod}
+            {Use~the~DoD~classified~profile~only~inside~the~authorized~environment.}}
+      }
+  }
+
+\cs_new_protected:Npn \ls_validate_dod_cti_category:
+  {
+    \bool_set_false:N \l_tmpa_bool
+    \str_if_eq:VnT \g_ls_profile_tl {cui-dod}
+      {\bool_set_true:N \l_tmpa_bool}
+    \bool_if:NT \l_tmpa_bool
+      {
+        \clist_if_in:NnT \g_ls_controls_clist {cui}
+          {
+            \clist_set:NV \l_tmpa_clist \g_ls_cui_categories_tl
+            \clist_if_in:NnTF \l_tmpa_clist {CTI}
+              {
+                \str_if_eq:VnT \g_ls_distribution_code_tl {none}
+                  {\ls_error:nn
+                    {The~DoD~unclassified~CTI~category~requires~a~structured~distribution~statement}
+                    {Configure~the~controlling~DoD~office's~Distribution~Statement~B,~C,~D,~E,~or~F~determination.}}
+              }
+              {
+                \str_if_eq:VnF \g_ls_distribution_code_tl {none}
+                  {
+                    \str_if_eq:VnF \g_ls_distribution_code_tl {A}
+                      {\ls_error:nn
+                        {A~DoD~CUI~distribution~statement~requires~the~CTI~CUI~category}
+                        {Include~the~exact~delimited~token~CTI~in~cui-categories~only~when~the~controlling~DoD~office~made~that~determination.}}
+                  }
+              }
+          }
+      }
+  }
+
+\cs_new_protected:Npn \ls_validate_dod_export_technical_information:
+  {
+    \bool_if:NT \g_ls_dod_export_technical_information_bool
+      {
+        \bool_set_false:N \l_tmpa_bool
+        \str_if_eq:VnT \g_ls_profile_tl {cui-dod}
+          {\bool_set_true:N \l_tmpa_bool}
+        \str_if_eq:VnT \g_ls_profile_tl {classified-dod}
+          {\bool_set_true:N \l_tmpa_bool}
+        \bool_if:NF \l_tmpa_bool
+          {\ls_error:nn
+            {DoD~export-controlled~technical~information~requires~a~DoD~profile}
+            {Use~cui-dod~for~unclassified~CTI~or~classified-dod~for~classified~technical~information.}}
+
+        \bool_set_false:N \l_tmpa_bool
+        \clist_if_in:NnT \g_ls_controls_clist {ear}
+          {\bool_set_true:N \l_tmpa_bool}
+        \clist_if_in:NnT \g_ls_controls_clist {itar}
+          {\bool_set_true:N \l_tmpa_bool}
+        \bool_if:NF \l_tmpa_bool
+          {\ls_error:nn
+            {DoD~export-controlled~technical~information~requires~EAR~or~ITAR~review~metadata}
+            {Add~the~reviewed~ear~or~itar~control~and~complete~all~export~fields.}}
+
+        \str_if_eq:VnTF \g_ls_profile_tl {cui-dod}
+          {
+            % DoDI 5230.24 Section 3.4.i applies this B--E assignment and
+            % reason rule to unclassified export-controlled CTI.
+            \str_case:VnF \g_ls_distribution_code_tl
+              {{B}{}{C}{}{D}{}{E}{}}
+              {\ls_error:nn
+                {Unclassified~DoD~export-controlled~CTI~requires~Distribution~Statement~B,~C,~D,~or~E}
+                {Use~the~controlling~DoD~office's~authorized~statement;~Statement~A~and~F~do~not~satisfy~the~unclassified~CTI~rule.}}
+            \clist_set:NV \l_ls_distribution_categories_clist
+              \g_ls_distribution_category_tl
+            \clist_if_in:NnF \l_ls_distribution_categories_clist {Export~Controlled}
+              {\ls_error:nn
+                {The~unclassified~DoD~distribution~reasons~must~include~Export~Controlled}
+                {Add~the~exact~Export~Controlled~category~from~the~controlling~office's~determination.}}
+          }
+          {
+            % Classified technical information follows the B--F rule in
+            % Sections 3.3.a and 4.3.e(3). Statement F has no category field.
+            \str_case:VnF \g_ls_distribution_code_tl
+              {{B}{}{C}{}{D}{}{E}{}{F}{}}
+              {\ls_error:nn
+                {Classified~DoD~export-controlled~technical~information~requires~Distribution~Statement~B,~C,~D,~E,~or~F}
+                {Use~the~controlling~DoD~office's~authorized~classified-information~distribution~determination.}}
+          }
+      }
+  }
+
+\cs_new_protected:Npn \ls_validate_dod_export_determination:
+  {
+    \bool_set_false:N \l_tmpa_bool
+    \str_if_eq:VnT \g_ls_profile_tl {cui-dod}
+      {\bool_set_true:N \l_tmpa_bool}
+    \str_if_eq:VnT \g_ls_profile_tl {classified-dod}
+      {\bool_set_true:N \l_tmpa_bool}
+    \bool_if:NTF \l_tmpa_bool
+      {
+        \bool_set_false:N \l_tmpb_bool
+        \clist_if_in:NnT \g_ls_controls_clist {ear}
+          {\bool_set_true:N \l_tmpb_bool}
+        \clist_if_in:NnT \g_ls_controls_clist {itar}
+          {\bool_set_true:N \l_tmpb_bool}
+        \bool_if:NT \l_tmpb_bool
+          {
+            \bool_if:NF \g_ls_dod_export_technical_information_bool
+              {
+                \tl_if_blank:VT \g_ls_dod_export_determination_tl
+                  {\ls_error:nn
+                    {A~DoD~EAR/ITAR~profile~requires~an~explicit~export-controlled-technical-information~determination}
+                    {Set~dod-export-controlled-technical-information=true~or~false~only~from~the~controlling~DoD~office's~review.}}
+              }
+          }
+        \str_if_eq:VnT \g_ls_dod_export_determination_tl {does-not-apply}
+          {
+            \bool_if:NT \g_ls_dod_export_technical_information_bool
+              {\ls_error:nn
+                {The~explicit~DoD~export~determination~conflicts~with~a~definitionally~export-controlled~defense~category}
+                {Use~the~controlling~office's~consistent~determination~and~approved~distribution~reasons.}}
+          }
+        \bool_if:NF \l_tmpb_bool
+          {
+            \bool_if:NF \g_ls_dod_export_technical_information_bool
+              {
+                \tl_if_blank:VF \g_ls_dod_export_determination_tl
+                  {\ls_error:nn
+                    {A~DoD~export~determination~has~no~EAR/ITAR~control~or~export-controlled~defense~category}
+                    {Remove~the~stale~determination~or~configure~the~reviewed~export~layer.}}
+              }
+          }
+      }
+      {
+        \tl_if_blank:VF \g_ls_dod_export_determination_tl
+          {\ls_error:nn {The~DoD~export~determination~key~requires~a~DoD~profile}
+            {Remove~the~stale~key~or~select~the~authority-directed~DoD~profile.}}
+      }
+  }
+
+\cs_new_protected:Npn \ls_validate_export_jurisdiction:
+  {
+    \bool_set_false:N \l_ls_export_ear_bool
+    \bool_set_false:N \l_ls_export_itar_bool
+    \clist_if_in:NnT \g_ls_controls_clist {ear}
+      {\bool_set_true:N \l_ls_export_ear_bool}
+    \clist_if_in:NnT \g_ls_controls_clist {itar}
+      {\bool_set_true:N \l_ls_export_itar_bool}
+    \bool_if:NTF \l_ls_export_ear_bool
+      {
+        \bool_if:NTF \l_ls_export_itar_bool
+          {
+            \str_if_eq:VnF \g_ls_export_jurisdiction_tl {EAR~and~ITAR}
+              {\ls_error:nn {Export~jurisdiction~does~not~match~controls={ear,itar}}
+                {Use~export-jurisdiction={EAR~and~ITAR}~only~after~both~reviews~apply.}}
+          }
+          {
+            \str_if_eq:VnF \g_ls_export_jurisdiction_tl {EAR}
+              {\ls_error:nn {Export~jurisdiction~does~not~match~controls={ear}}
+                {Use~export-jurisdiction={EAR},~or~correct~the~reviewed~control~set.}}
+          }
+      }
+      {
+        \str_if_eq:VnF \g_ls_export_jurisdiction_tl {ITAR}
+          {\ls_error:nn {Export~jurisdiction~does~not~match~controls={itar}}
+            {Use~export-jurisdiction={ITAR},~or~correct~the~reviewed~control~set.}}
+      }
+  }
+
+\NewDocumentCommand{\LSValidateBanner}{m}{\ls_validate_banner_value:n {#1}}
+
+% Validate a CUI-only banner for an individual slide without changing the
+% document's validated overall banner. The presentation renderer consumes the
+% result immediately through \LSValidatedBannerText.
+\cs_new_protected:Npn \ls_validate_cui_only_banner:n #1
+  {
+    \clist_if_in:NnTF \g_ls_controls_clist {cui}
+      {
+        \ls_canonicalize_banner:n {#1}
+        \tl_if_blank:VTF \l_ls_banner_candidate_tl
+          {\ls_error:nn {A~CUI-only~slide~banner~cannot~be~blank}
+            {Use~the~exact~uppercase~CUI~or~CONTROLLED~banner~approved~for~the~slide.}}
+          {}
+        \ls_require_uppercase_banner:
+        \regex_match:nVTF
+          {\A \s* (CUI|CONTROLLED)
+            ( \s* // \s* [A-Z0-9-]+ ( \s* / \s* [A-Z0-9-]+ )* )*
+            \s* \Z}
+          \l_ls_banner_upper_tl
+          {}
+          {\ls_error:nn {The~CUI-only~slide~banner~has~invalid~syntax}
+            {Use~the~exact~uppercase~CUI~or~CONTROLLED~banner~from~the~controlling~authority.}}
+        \regex_match:nVTF
+          {TOP \s+ SECRET|SECRET|CONFIDENTIAL|UNCLASSIFIED}
+          \l_ls_banner_upper_tl
+          {\ls_error:nn {A~CUI-only~slide~banner~cannot~contain~a~classification~term}
+            {Use~only~the~approved~CUI~control~and~dissemination~markings~for~that~slide.}}
+          {}
+        \ls_validate_banner_width:
+      }
+      {\ls_error:nn {A~CUI-only~slide~banner~requires~controls={cui}}
+        {Add~cui~only~when~authorized,~or~do~not~use~a~CUI-only~slide~banner.}}
+  }
+
+\NewDocumentCommand{\LSValidateCUIOnlyBanner}{m}
+  {\ls_validate_cui_only_banner:n {#1}}
+
+\cs_new_protected:Npn \ls_validate_markings:
+  {
+    \ls_freeze_marking_fields:
+    \tl_if_blank:VF \g_ls_classified_cui_warning_tl
+      {\ls_error:nn {Raw~classified-cui-warning~text~is~disabled}
+        {Use~classified-cui-source~and~classified-cui-contact;~the~package~renders~the~prescribed~DoD~warning~structure.}}
+
+    \str_if_eq:VnTF \g_ls_profile_tl {unclassified}
+      {\tl_gset:Nn \g_ls_banner_color_tl {LSUnclassifiedGreen}}
+      {
+        \str_if_eq:VnTF \g_ls_classification_tl {top-secret}
+          {\tl_gset:Nn \g_ls_banner_color_tl {LSOrange}}
+          {
+            \str_if_eq:VnTF \g_ls_classification_tl {secret}
+              {\tl_gset:Nn \g_ls_banner_color_tl {LSRed}}
+              {
+                \str_if_eq:VnTF \g_ls_classification_tl {confidential}
+                  {\tl_gset:Nn \g_ls_banner_color_tl {LSBlue}}
+                  {
+                    \clist_if_in:NnTF \g_ls_controls_clist {cui}
+                      {\tl_gset:Nn \g_ls_banner_color_tl {LSPurple}}
+                      {\tl_gset:Nn \g_ls_banner_color_tl {LSBlue}}
+                  }
+              }
+          }
+      }
+
+    \clist_map_inline:Nn \g_ls_controls_clist
+      {
+        \str_case:nnF {##1}
+          {
+            {proprietary}{}
+            {ear}{}
+            {itar}{}
+            {cui}{}
+          }
+          {\ls_error:nn {Unknown~control~token~'##1'}
+            {Use~only~proprietary,~ear,~itar,~or~cui.}}
+      }
+
+    \str_if_eq:VnT \g_ls_profile_tl {uncontrolled}
+      {
+        \clist_if_empty:NF \g_ls_controls_clist
+          {\ls_error:nn {The~uncontrolled~profile~cannot~declare~controls}
+            {Choose~unclassified,~corporate,~a~CUI~profile,~or~a~classified~profile.}}
+      }
+
+    \ls_validate_proprietary_owners:
+
+    \ls_profile_cui:T
+      {
+        \clist_if_in:NnF \g_ls_controls_clist {cui}
+          {\ls_error:nn {A~CUI~profile~requires~controls={cui}}
+            {Add~cui~to~the~controls~list~only~when~authorized.}}
+      }
+
+    \ls_profile_classified:TF
+      {
+        \str_if_eq:VnT \g_ls_classification_tl {none}
+          {\ls_error:nn {A~classified~profile~requires~a~classification~level}
+            {Choose~classification=confidential,~secret,~or~top-secret.}}
+        \bool_if:NF \g_ls_authorized_classified_bool
+          {\ls_error:nn {Classified~output~requires~an~authorized~classified~system}
+            {Set~operator-confirms-classified-environment=true~only~inside~the
+             approved~environment~and~after~classification~review.}}
+        \ls_require_nonblank:Nn \g_ls_classified_by_tl {classified-by}
+        \ls_require_nonblank:Nn \g_ls_declassify_on_tl {declassify-on}
+        \str_if_eq:VnTF \g_ls_authority_type_tl {original}
+          {
+            \ls_require_nonblank:Nn \g_ls_classification_reason_tl {classification-reason}
+            \ls_require_blank:Nn \g_ls_derived_from_tl {derived-from}
+            \bool_if:NF \g_ls_oca_acknowledged_bool
+              {\ls_error:nn {Original~classification~requires~OCA~confirmation}
+                {Set~original-classification-authority-confirmed=true~only~for
+                 an~authorized~Original~Classification~Authority~decision.}}
+          }
+          {
+            \str_if_eq:VnTF \g_ls_authority_type_tl {derivative}
+              {
+                \ls_require_nonblank:Nn \g_ls_derived_from_tl {derived-from}
+                \ls_require_blank:Nn \g_ls_classification_reason_tl {classification-reason}
+                \bool_if:NT \g_ls_oca_acknowledged_bool
+                  {\ls_error:nn {Original-classification-authority~confirmation~does~not~apply~to~derivative~classification}
+                    {Remove~the~stale~confirmation~or~use~an~authorized~original-classification~decision.}}
+              }
+              {\ls_error:nn {Classified~output~requires~authority-type}
+                {Choose~authority-type=original~or~derivative~and~supply~the
+                 corresponding~authorized~fields.}}
+          }
+      }
+      {
+        \str_if_eq:VnF \g_ls_classification_tl {none}
+          {\ls_error:nn {A~classification~level~requires~a~classified~profile}
+            {Choose~classified-general~or~classified-dod.}}
+        \ls_require_blank:Nn \g_ls_classified_by_tl {classified-by}
+        \ls_require_blank:Nn \g_ls_classification_reason_tl {classification-reason}
+        \ls_require_blank:Nn \g_ls_derived_from_tl {derived-from}
+        \ls_require_blank:Nn \g_ls_declassify_on_tl {declassify-on}
+        \ls_require_blank:Nn \g_ls_classified_cui_source_tl {classified-cui-source}
+        \ls_require_blank:Nn \g_ls_classified_cui_contact_tl {classified-cui-contact}
+        \str_if_eq:VnF \g_ls_authority_type_tl {none}
+          {\ls_error:nn {Classification~authority-type~does~not~apply~to~unclassified~output}
+            {Use~authority-type=none~unless~an~authorized~classified~profile~is~selected.}}
+        \bool_if:NT \g_ls_oca_acknowledged_bool
+          {\ls_error:nn {Original-classification-authority~confirmation~does~not~apply~to~unclassified~output}
+            {Remove~the~stale~confirmation.}}
+        \bool_if:NT \g_ls_authorized_classified_bool
+          {\ls_error:nn {Classified-environment~confirmation~does~not~apply~to~unclassified~output}
+            {Remove~the~stale~operator~confirmation.}}
+      }
+
+    \ls_controlled_content:T
+      {
+        \bool_if:NF \g_ls_authorized_controlled_bool
+          {
+            \ls_error:nn
+              {Controlled-content~markings~require~an~authorized~system}
+              {Set~operator-confirms-controlled-environment=true~only~after
+               confirming~the~contract,~authorization,~people,~and~system.}
+          }
+      }
+    \ls_controlled_content:F
+      {
+        \bool_if:NT \g_ls_authorized_controlled_bool
+          {\ls_error:nn {Controlled-environment~confirmation~has~no~controlled~content}
+            {Remove~the~stale~operator~confirmation~or~configure~the~reviewed~CUI/EAR/ITAR~control.}}
+      }
+
+    \clist_if_in:NnT \g_ls_controls_clist {cui}
+      {
+        \ls_require_nonblank:Nn \g_ls_controlled_by_tl {controlled-by}
+        \ls_require_nonblank:Nn \g_ls_cui_categories_tl {cui-categories}
+        \ls_require_nonblank:Nn \g_ls_control_poc_tl {control-poc}
+        \ls_profile_cui:F
+          {
+            \ls_profile_classified:F
+              {\ls_error:nn {CUI~requires~a~CUI~or~classified~profile}
+                {Choose~the~profile~specified~by~the~controlling~authority.}}
+          }
+        \ls_profile_classified:T
+          {
+            \str_if_eq:VnT \g_ls_profile_tl {classified-dod}
+              {
+                \ls_require_nonblank:Nn \g_ls_controlled_office_tl {controlled-office}
+                \ls_require_nonblank:Nn \g_ls_classified_cui_source_tl {classified-cui-source}
+              }
+          }
+      }
+
+    \clist_if_in:NnF \g_ls_controls_clist {cui}
+      {
+        \ls_require_blank:Nn \g_ls_controlled_by_tl {controlled-by}
+        \ls_require_blank:Nn \g_ls_controlled_office_tl {controlled-office}
+        \ls_require_blank:Nn \g_ls_cui_categories_tl {cui-categories}
+        \ls_require_blank:Nn \g_ls_limited_dissemination_tl
+          {distribution-dissemination-control}
+        \ls_require_blank:Nn \g_ls_control_poc_tl {control-poc}
+      }
+
+    \bool_set_false:N \l_tmpa_bool
+    \str_if_eq:VnT \g_ls_profile_tl {cui-dod}
+      {\bool_set_true:N \l_tmpa_bool}
+    \str_if_eq:VnT \g_ls_profile_tl {classified-dod}
+      {\bool_set_true:N \l_tmpa_bool}
+    \bool_if:NF \l_tmpa_bool
+      {\ls_require_blank:Nn \g_ls_controlled_office_tl {controlled-office}}
+
+    \str_if_eq:VnF \g_ls_profile_tl {classified-dod}
+      {
+        \ls_require_blank:Nn \g_ls_classified_cui_warning_tl {classified-cui-warning}
+        \ls_require_blank:Nn \g_ls_classified_cui_source_tl {classified-cui-source}
+        \ls_require_blank:Nn \g_ls_classified_cui_contact_tl {classified-cui-contact}
+      }
+    \str_if_eq:VnT \g_ls_profile_tl {classified-dod}
+      {\clist_if_in:NnF \g_ls_controls_clist {cui}
+        {
+          \ls_require_blank:Nn \g_ls_classified_cui_source_tl {classified-cui-source}
+          \ls_require_blank:Nn \g_ls_classified_cui_contact_tl {classified-cui-contact}
+        }}
+
+    \clist_if_in:NnTF \g_ls_controls_clist {ear}
+      {\bool_set_true:N \l_tmpa_bool}
+      {
+        \clist_if_in:NnTF \g_ls_controls_clist {itar}
+          {\bool_set_true:N \l_tmpa_bool}
+          {\bool_set_false:N \l_tmpa_bool}
+      }
+    \bool_if:NT \l_tmpa_bool
+      {
+        \ls_require_nonblank:Nn \g_ls_export_jurisdiction_tl {export-jurisdiction}
+        \ls_require_nonblank:Nn \g_ls_export_classification_tl {export-classification}
+        \ls_require_nonblank:Nn \g_ls_export_authorization_tl {export-authorization}
+        \ls_require_nonblank:Nn \g_ls_export_destination_tl {export-destination}
+        \ls_require_nonblank:Nn \g_ls_export_end_user_tl {export-end-user}
+        \ls_require_nonblank:Nn \g_ls_export_end_use_tl {export-end-use}
+        \ls_require_nonblank:Nn \g_ls_export_contact_tl {export-contact}
+        \ls_require_nonblank:Nn \g_ls_export_review_date_tl {export-review-date}
+        \ls_validate_export_jurisdiction:
+      }
+    \bool_if:NF \l_tmpa_bool
+      {
+        \ls_require_blank:Nn \g_ls_export_jurisdiction_tl {export-jurisdiction}
+        \ls_require_blank:Nn \g_ls_export_classification_tl {export-classification}
+        \ls_require_blank:Nn \g_ls_export_authorization_tl {export-authorization}
+        \ls_require_blank:Nn \g_ls_export_destination_tl {export-destination}
+        \ls_require_blank:Nn \g_ls_export_end_user_tl {export-end-user}
+        \ls_require_blank:Nn \g_ls_export_end_use_tl {export-end-use}
+        \ls_require_blank:Nn \g_ls_export_contact_tl {export-contact}
+        \ls_require_blank:Nn \g_ls_export_review_date_tl {export-review-date}
+      }
+
+    \ls_validate_distribution:
+    \ls_validate_dod_export_determination:
+    \ls_validate_dod_cti_category:
+    \ls_validate_dod_export_technical_information:
+
+    \clist_if_in:NnT \g_ls_controls_clist {cui}
+      {
+        \bool_set_false:N \l_tmpa_bool
+        \str_if_eq:VnT \g_ls_profile_tl {cui-dod}
+          {\bool_set_true:N \l_tmpa_bool}
+        \str_if_eq:VnT \g_ls_profile_tl {classified-dod}
+          {\bool_set_true:N \l_tmpa_bool}
+        \bool_if:NT \l_tmpa_bool
+          {
+            \ls_require_nonblank:Nn \g_ls_controlled_office_tl {controlled-office}
+            \str_if_eq:VnT \g_ls_distribution_code_tl {none}
+              {\ls_require_nonblank:Nn \g_ls_limited_dissemination_tl
+                {distribution-dissemination-control}}
+          }
+      }
+
+    \ls_prepare_document_banner:
+
+    % A preamble page override may have been entered before later
+    % \LSMarkingSetup calls selected the final profile. Revalidate and freeze it
+    % against that final state so setup order cannot bypass banner rules.
+    \bool_if:NT \g_ls_page_banner_override_bool
+      {
+        \ls_validate_banner_value:n
+          {\tl_use:N \g_ls_page_banner_override_tl}
+        \tl_gset:Nx \g_ls_page_banner_override_tl
+          {\exp_not:V \l_ls_banner_candidate_tl}
+        \bool_set_false:N \l_tmpa_bool
+        \ls_profile_cui:T {\bool_set_true:N \l_tmpa_bool}
+        \str_if_eq:VnT \g_ls_profile_tl {classified-general}
+          {\clist_if_in:NnT \g_ls_controls_clist {cui}
+            {\bool_set_true:N \l_tmpa_bool}}
+        \bool_if:NT \l_tmpa_bool
+          {
+            \tl_if_eq:NNTF
+              \g_ls_page_banner_override_tl \g_ls_document_banner_tl
+              {}
+              {\ls_error:nn
+                {A~CUI-bearing~document~must~use~one~inclusive~banner~on~every~page}
+                {A~preamble~page~override~must~exactly~match~the~final~validated~document~banner.}}
+          }
+      }
+
+    \bool_if:NF \g_ls_render_page_banners_bool
+      {
+        \tl_if_blank:VF \g_ls_document_banner_tl
+          {\bool_if:NF \g_ls_alternate_banner_renderer_bool
+            {\ls_error:nn {Marked~output~has~no~registered~banner~renderer}
+              {Enable~page~banners~or~use~the~Linear~Space~presentation~theme.}}}
+      }
+  }
+
+\AtBeginDocument{\ls_validate_markings:\bool_gset_true:N \g_ls_config_frozen_bool}
+
+% ---------------------------------------------------------------------------
+% Resolved labels, banners, and portion marks
+% ---------------------------------------------------------------------------
+\cs_new:Npn \ls_resolved_banner:
+  {
+    \tl_if_blank:VTF \g_ls_banner_tl
+      {
+        \str_if_eq:VnTF \g_ls_profile_tl {unclassified}
+          {UNCLASSIFIED}
+          {
+            \str_if_eq:VnTF \g_ls_profile_tl {corporate}
+              {
+                \clist_if_in:NnTF \g_ls_controls_clist {proprietary}
+                  {
+                    \str_if_eq:VnTF \g_ls_proprietary_mode_tl {multi-owner}
+                      {PROPRIETARY,~SEE~TITLE~PAGE}
+                      {LINEAR~SPACE~PROPRIETARY}
+                  }
+                  {}
+              }
+              {}
+          }
+      }
+      {\tl_use:N \g_ls_banner_tl}
+  }
+
+\cs_new:Npn \ls_banner_color: {\tl_use:N \g_ls_banner_color_tl}
+
+\NewExpandableDocumentCommand{\LSBannerText}{}{\ls_resolved_banner:}
+\NewExpandableDocumentCommand{\LSBannerColor}{}{\ls_banner_color:}
+
+\NewDocumentCommand{\LSIfControlTF}{m m m}
+  {\clist_if_in:NnTF \g_ls_controls_clist {#1}{#2}{#3}}
+\NewDocumentCommand{\LSIfClassifiedTF}{+m +m}
+  {\ls_profile_classified:TF {#1}{#2}}
+
+% A public-facing summary must never expose internal profile/debug vocabulary.
+% It resolves to the authoritative banner text and is blank when no banner is
+% required. The stock layouts already render that banner at the page edges.
+\NewExpandableDocumentCommand{\LSMarkingSummary}{}{\ls_resolved_banner:}
+
+\cs_new:Npn \ls_portion_mark:n #1 {\textbf{(#1)}}
+\cs_new:Npn \ls_portion:nn #1#2
+  {\ls_portion_mark:n {#1}\nobreakspace #2}
+\NewDocumentCommand{\LSPortionMark}{m}
+  {\ls_error:nn {Raw~portion~marks~are~disabled}
+    {Use~\string\LSU,~\string\LSCUI,~\string\LSC,~\string\LSS,~or~\string\LSTS~so~the~mark~can~be~checked~against~the~profile.}}
+\NewDocumentCommand{\LSPortion}{m m}
+  {\ls_error:nn {Raw~portion~marks~are~disabled}
+    {Use~\string\LSU,~\string\LSCUI,~\string\LSC,~\string\LSS,~or~\string\LSTS~so~the~mark~can~be~checked~against~the~profile.}}
+\NewDocumentCommand{\LSU}{m}{\ls_portion:nn {U}{#1}}
+\NewDocumentCommand{\LSCUI}{O{} m}
+  {
+    \clist_if_in:NnTF \g_ls_controls_clist {cui}
+      {
+        \ls_canonicalize_banner:n {#1}
+        \tl_if_blank:VTF \l_ls_banner_candidate_tl
+          {\ls_portion:nn {CUI}{#2}}
+          {
+            \bool_set_false:N \l_tmpa_bool
+            \str_if_eq:VnT \g_ls_profile_tl {cui-dod}
+              {\bool_set_true:N \l_tmpa_bool}
+            \str_if_eq:VnT \g_ls_profile_tl {classified-dod}
+              {\bool_set_true:N \l_tmpa_bool}
+            \bool_if:NT \l_tmpa_bool
+              {\ls_error:nn {DoD~CUI~portions~must~use~the~mark~CUI}
+                {Use~\string\LSCUI\{text\};~DoD~category~and~control~details~belong~in~the~designation~indicator.}}
+            \ls_require_uppercase_banner:
+            \regex_match:nVTF
+              {\A (SP-)? [A-Z0-9-]+ ( / (SP-)? [A-Z0-9-]+ )* ( // [A-Z0-9-]+ ( / [A-Z0-9-]+ )* )? \Z}
+              \l_ls_banner_upper_tl
+              {}
+              {\ls_error:nn {The~CUI~portion~category/control~token~has~invalid~syntax}
+                {Use~the~exact~uppercase~token~from~the~controlling~authority.}}
+            \regex_match:nVTF {CUI|CONTROLLED|CONFIDENTIAL|SECRET|TOP|\A (U|C|S|TS) \Z}
+              \l_ls_banner_upper_tl
+              {\ls_error:nn {The~optional~CUI~portion~token~is~not~a~category/control}
+                {Pass~only~the~authorized~category~or~dissemination~token~after~CUI.}}
+              {}
+            \tl_set:Nx \l_tmpa_tl
+              {\tl_upper_case:n {\tl_to_str:V \g_ls_document_banner_tl}}
+            \regex_replace_all:nnN {\s+} {} \l_tmpa_tl
+            \tl_put_left:Nn \l_tmpa_tl {/}
+            \tl_put_right:Nn \l_tmpa_tl {/}
+            \tl_set:Nx \l_tmpb_tl
+              {/\tl_upper_case:n {\tl_to_str:V \l_ls_banner_candidate_tl}/}
+            \tl_if_in:VVTF \l_tmpa_tl \l_tmpb_tl
+              {\ls_portion:nn {CUI//\tl_use:N \l_ls_banner_candidate_tl}{#2}}
+              {\ls_error:nn {The~CUI~portion~token~is~absent~from~the~document~banner}
+                {Every~CUI~portion~category/control~must~be~included~in~the~validated~inclusive~banner.}}
+          }
+      }
+      {\ls_error:nn {A~CUI~portion~mark~requires~controls={cui}}
+        {Configure~an~authorized~CUI~or~classified~profile~before~using~\string\LSCUI.}}
+  }
+\NewDocumentCommand{\LSC}{m}
+  {
+    \str_if_eq:VnTF \g_ls_classification_tl {confidential}
+      {\ls_portion:nn {C}{#1}}
+      {
+        \str_if_eq:VnTF \g_ls_classification_tl {secret}
+          {\ls_portion:nn {C}{#1}}
+          {
+            \str_if_eq:VnTF \g_ls_classification_tl {top-secret}
+              {\ls_portion:nn {C}{#1}}
+              {\ls_error:nn
+                {A~CONFIDENTIAL~portion~mark~requires~CONFIDENTIAL,~SECRET,~or~TOP~SECRET~output}
+                {Configure~an~authorized~classified~profile~before~using~\string\LSC.}}
+          }
+      }
+  }
+\NewDocumentCommand{\LSS}{m}
+  {
+    \str_if_eq:VnTF \g_ls_classification_tl {secret}
+      {\ls_portion:nn {S}{#1}}
+      {
+        \str_if_eq:VnTF \g_ls_classification_tl {top-secret}
+          {\ls_portion:nn {S}{#1}}
+          {\ls_error:nn {A~SECRET~portion~mark~requires~SECRET~or~TOP~SECRET~output}
+            {Configure~an~authorized~classified~profile~before~using~\string\LSS.}}
+      }
+  }
+\NewDocumentCommand{\LSTS}{m}
+  {
+    \str_if_eq:VnTF \g_ls_classification_tl {top-secret}
+      {\ls_portion:nn {TS}{#1}}
+      {\ls_error:nn {A~TOP~SECRET~portion~mark~requires~TOP~SECRET~output}
+        {Configure~an~authorized~TOP~SECRET~profile~before~using~\string\LSTS.}}
+  }
+
+\NewDocumentCommand{\LSSetRunningBanner}{m}
+  {
+    \ls_validate_banner_value:n {#1}
+    \tl_gset:Nx \g_ls_banner_tl {\exp_not:V \l_ls_banner_candidate_tl}
+  }
+
+\tl_new:N \g_ls_page_banner_override_tl
+\bool_new:N \g_ls_page_banner_override_bool
+\NewDocumentCommand{\LSThisPageBanner}{m}
+  {
+    \ls_validate_banner_value:n {#1}
+    \tl_gset:Nx \g_ls_page_banner_override_tl
+      {\exp_not:V \l_ls_banner_candidate_tl}
+    \bool_gset_true:N \g_ls_page_banner_override_bool
+  }
+\NewDocumentCommand{\LSDisablePageBanners}{}
+  {
+    \bool_if:NT \g_ls_config_frozen_bool
+      {
+        \str_if_eq:VnT \g_ls_profile_tl {unclassified}
+          {
+            \bool_if:NF \g_ls_alternate_banner_renderer_bool
+              {\ls_error:nn {UNCLASSIFIED~page~banners~cannot~be~disabled}
+                {Keep~page~banners~enabled~or~use~a~registered~presentation~renderer.}}
+          }
+        \ls_controlled_content:T
+          {
+            \bool_if:NF \g_ls_alternate_banner_renderer_bool
+              {\ls_error:nn {Controlled~page~banners~cannot~be~disabled}
+                {Keep~page~banners~enabled~or~use~a~registered~presentation~renderer.}}
+          }
+        \ls_profile_classified:T
+          {
+            \bool_if:NF \g_ls_alternate_banner_renderer_bool
+              {\ls_error:nn {Classified~page~banners~cannot~be~disabled}
+                {Keep~page~banners~enabled~or~use~a~registered~presentation~renderer.}}
+          }
+      }
+    \bool_gset_false:N \g_ls_render_page_banners_bool
+  }
+\NewDocumentCommand{\LSEnablePageBanners}{}
+  {\bool_gset_true:N \g_ls_render_page_banners_bool}
+\NewDocumentCommand{\LSRegisterAlternateBannerRenderer}{}
+  {
+    \bool_if:NTF \g_ls_config_frozen_bool
+      {\ls_error:nn {Banner~renderer~registration~is~frozen}
+        {A~class~or~theme~must~register~its~renderer~in~the~preamble.}}
+      {\bool_gset_true:N \g_ls_alternate_banner_renderer_bool}
+  }
+\NewDocumentCommand{\LSRegisterPresentationRenderer}{}
+  {
+    \bool_if:NTF \g_ls_config_frozen_bool
+      {\ls_error:nn {Presentation~renderer~registration~is~frozen}
+        {A~presentation~theme~must~register~its~renderer~in~the~preamble.}}
+      {
+        \bool_gset_true:N \g_ls_alternate_banner_renderer_bool
+        \bool_gset_true:N \g_ls_presentation_mode_bool
+        \bool_gset_false:N \g_ls_render_page_banners_bool
+        \int_gset:Nn \g_ls_notice_deadline_int {1}
+      }
+  }
+\NewDocumentCommand{\LSConfirmAlternateBannerRendered}{}
+  {\bool_gset_true:N \g_ls_alternate_banner_rendered_bool}
+\NewExpandableDocumentCommand{\LSValidatedBannerText}{}
+  {\tl_use:N \l_ls_banner_candidate_tl}
+
+\prg_new_conditional:Npnn \ls_notices_required: {T,F,TF}
+  {
+    \bool_set_false:N \l_tmpa_bool
+    \clist_if_empty:NF \g_ls_controls_clist
+      {\bool_set_true:N \l_tmpa_bool}
+    \ls_profile_classified:T {\bool_set_true:N \l_tmpa_bool}
+    \str_if_eq:VnF \g_ls_distribution_code_tl {none}
+      {\bool_set_true:N \l_tmpa_bool}
+    \tl_if_blank:VF \g_ls_custom_notice_tl
+      {\bool_set_true:N \l_tmpa_bool}
+    \bool_if:NTF \l_tmpa_bool {\prg_return_true:}{\prg_return_false:}
+  }
+
+\prg_new_conditional:Npnn \ls_notices_dense: {T,F,TF}
+  {
+    \int_zero:N \l_ls_notice_count_int
+    \clist_if_in:NnT \g_ls_controls_clist {proprietary}
+      {\int_incr:N \l_ls_notice_count_int}
+    \clist_if_in:NnT \g_ls_controls_clist {cui}
+      {\int_incr:N \l_ls_notice_count_int}
+    \clist_if_in:NnTF \g_ls_controls_clist {ear}
+      {\int_incr:N \l_ls_notice_count_int}
+      {\clist_if_in:NnT \g_ls_controls_clist {itar}
+        {\int_incr:N \l_ls_notice_count_int}}
+    \bool_if:NT \g_ls_dod_export_technical_information_bool
+      {\int_incr:N \l_ls_notice_count_int}
+    \ls_profile_classified:T
+      {\int_incr:N \l_ls_notice_count_int}
+    \str_if_eq:VnT \g_ls_profile_tl {classified-dod}
+      {\clist_if_in:NnT \g_ls_controls_clist {cui}
+        {\int_incr:N \l_ls_notice_count_int}}
+    \str_if_eq:VnF \g_ls_distribution_code_tl {none}
+      {\int_incr:N \l_ls_notice_count_int}
+    \tl_if_blank:VF \g_ls_custom_notice_tl
+      {\int_incr:N \l_ls_notice_count_int}
+    \int_compare:nNnTF {\l_ls_notice_count_int} > {2}
+      {\prg_return_true:}{\prg_return_false:}
+  }
+
+\prg_new_conditional:Npnn \ls_dod_restricted_distribution: {T,F,TF}
+  {
+    \bool_set_false:N \l_tmpa_bool
+    \str_if_eq:VnT \g_ls_profile_tl {cui-dod}
+      {\bool_set_true:N \l_tmpa_bool}
+    \str_if_eq:VnT \g_ls_profile_tl {classified-dod}
+      {\bool_set_true:N \l_tmpa_bool}
+    \bool_if:NT \l_tmpa_bool
+      {
+        \str_if_eq:VnT \g_ls_distribution_code_tl {none}
+          {\bool_set_false:N \l_tmpa_bool}
+        \str_if_eq:VnT \g_ls_distribution_code_tl {A}
+          {\bool_set_false:N \l_tmpa_bool}
+      }
+    \bool_if:NTF \l_tmpa_bool {\prg_return_true:}{\prg_return_false:}
+  }
+
+\NewDocumentCommand{\LSIfDenseMarkingsTF}{+m +m}
+  {\ls_notices_dense:TF {#1}{#2}}
+\NewDocumentCommand{\LSIfDoDRestrictedDistributionTF}{+m +m}
+  {\ls_dod_restricted_distribution:TF {#1}{#2}}
+\NewDocumentCommand{\LSIfDoDExportTechnicalInformationTF}{+m +m}
+  {\bool_if:NTF \g_ls_dod_export_technical_information_bool {#1}{#2}}
+
+\cs_new_protected:Npn \ls_shipout_validate:
+  {
+    \int_gincr:N \g_ls_shipout_page_int
+    \bool_if:NF \g_ls_render_page_banners_bool
+      {
+        \tl_if_blank:VF \g_ls_document_banner_tl
+          {
+            \bool_if:NF \g_ls_alternate_banner_rendered_bool
+              {\ls_error:nn {The~alternate~renderer~did~not~emit~the~mandatory~banner}
+                {Use~the~registered~theme~banner~templates~on~every~marked~slide.}}
+          }
+      }
+    \int_compare:nNnT {\g_ls_shipout_page_int} = {1}
+      {
+        \ls_profile_classified:T
+          {
+            \bool_if:NF \g_ls_classification_block_rendered_bool
+              {\ls_error:nn {The~first~classified~page~or~slide~lacks~the~authority~block}
+                {Render~\string\LSClassificationAuthorityBlock~or~the~compact~block~before~the~first~shipout.}}
+          }
+      }
+    \int_compare:nNnT {\g_ls_shipout_page_int} = {\g_ls_notice_deadline_int}
+      {
+        \ls_notices_required:T
+          {
+            \bool_if:NF \g_ls_marking_notices_rendered_bool
+              {\ls_error:nn {Required~title-page~notices~were~not~rendered~in~time}
+                {Render~the~complete~compact~notice~set~before~the~first~page~or~slide~ships.}}
+          }
+      }
+    \int_compare:nNnT {\g_ls_shipout_page_int} = {2}
+      {
+        \bool_if:NT \g_ls_dod_export_technical_information_bool
+          {
+            \bool_if:NF \g_ls_dod_release_notice_rendered_bool
+              {\ls_error:nn {The~required~DoDD~5230.25~release~notice~was~not~rendered~by~page~or~slide~2}
+                {Use~the~stock~document~title~macro,~or~place~\string\LSMarkingDisclosureFrame~immediately~after~a~Beamer~title~slide.}}
+          }
+      }
+  }
+
+\cs_new_protected:Npn \ls_shipout_reset:
+  {\bool_gset_false:N \g_ls_alternate_banner_rendered_bool}
+
+\cs_new_protected:Npn \ls_shipout_banner:
+  {
+    \bool_if:NT \g_ls_render_page_banners_bool
+      {
+        \bool_if:NTF \g_ls_page_banner_override_bool
+          {\tl_set_eq:NN \l_tmpa_tl \g_ls_page_banner_override_tl}
+          {\tl_set:Nx \l_tmpa_tl {\ls_resolved_banner:}}
+        \tl_if_blank:VF \l_tmpa_tl
+          {
+            \begin{tikzpicture}[remember~picture,overlay]
+              \path[
+                fill=\ls_banner_color:,
+                draw=none
+              ]
+                (current~page.north~west)
+                rectangle
+                ([yshift=-0.18in]current~page.north~east);
+              \node[
+                anchor=center,
+                text=white,
+                align=center,
+                text~width=\dimexpr\paperwidth-12pt\relax,
+                font=\sffamily\bfseries\fontsize{7.5}{8.5}\selectfont,
+                inner~sep=0pt
+              ] at ([yshift=-0.09in]current~page.north)
+                {\tl_use:N \l_tmpa_tl};
+              \path[
+                fill=\ls_banner_color:,
+                draw=none
+              ]
+                (current~page.south~west)
+                rectangle
+                ([yshift=0.18in]current~page.south~east);
+              \node[
+                anchor=center,
+                text=white,
+                align=center,
+                text~width=\dimexpr\paperwidth-12pt\relax,
+                font=\sffamily\bfseries\fontsize{7.5}{8.5}\selectfont,
+                inner~sep=0pt
+              ] at ([yshift=0.09in]current~page.south)
+                {\tl_use:N \l_tmpa_tl};
+            \end{tikzpicture}
+          }
+      }
+    \bool_gset_false:N \g_ls_page_banner_override_bool
+    \tl_gclear:N \g_ls_page_banner_override_tl
+  }
+\AddToHook{shipout/foreground}{\ls_shipout_banner:}
+\AddToHook{shipout/before}{\ls_shipout_validate:}
+\AddToHook{shipout/after}{\ls_shipout_reset:}
+
+% ---------------------------------------------------------------------------
+% Notices and authority/designation blocks
+% ---------------------------------------------------------------------------
+\newtcolorbox{lsnotice}[1]{
+  enhanced,
+  breakable,
+  colback=LSMist,
+  colframe=LSBlue,
+  colbacktitle=LSBlue,
+  coltitle=white,
+  title={#1},
+  fonttitle=\sffamily\bfseries\small,
+  fontupper=\small,
+  boxrule=0.6pt,
+  arc=1.5pt,
+  left=7pt,
+  right=7pt,
+  top=5pt,
+  bottom=5pt,
+  before~skip=6pt,
+  after~skip=6pt,
+}
+
+\newtcolorbox{lsregwarning}{
+  enhanced,
+  breakable,
+  colback=LSMist,
+  colframe=LSBlue,
+  fontupper=\small,
+  boxrule=0.6pt,
+  arc=1.5pt,
+  left=7pt,
+  right=7pt,
+  top=5pt,
+  bottom=5pt,
+  before~skip=6pt,
+  after~skip=6pt,
+}
+
+\newtcolorbox{lscompactnotice}[1]{
+  enhanced,
+  breakable,
+  colback=LSMist,
+  colframe=LSBlue,
+  fontupper=\fontsize{6.4}{7.2}\selectfont,
+  boxrule=0.5pt,
+  arc=1pt,
+  left=3pt,
+  right=3pt,
+  top=1.5pt,
+  bottom=1.5pt,
+  before~skip=1.5pt,
+  after~skip=1.5pt,
+}
+
+\newtcolorbox{lscompactwarning}{
+  enhanced,
+  breakable,
+  colback=LSMist,
+  colframe=LSBlue,
+  fontupper=\fontsize{6.4}{7.2}\selectfont,
+  boxrule=0.5pt,
+  arc=1pt,
+  left=3pt,
+  right=3pt,
+  top=1.5pt,
+  bottom=1.5pt,
+  before~skip=1.5pt,
+  after~skip=1.5pt,
+}
+
+\NewDocumentCommand{\LSNoticeBox}{m +m}
+  {\begin{lsnotice}{#1}#2\end{lsnotice}}
+
+\cs_new:Npn \ls_compact_notice_heading:n #1
+  {
+    \str_case:nnF {#1}
+      {
+        {LINEAR~SPACE~PROPRIETARY}{PROPRIETARY}
+        {PROPRIETARY~OWNERS~AND~LEGENDS}{PROPRIETARY~OWNERS}
+        {CUI~DESIGNATION~INDICATOR}{CUI~DESIGNATION}
+        {EXPORT-CONTROL~METADATA}{EXPORT~METADATA}
+        {NOTICE~TO~ACCOMPANY~THE~DISSEMINATION~OF~EXPORT-CONTROLLED~TECHNICAL~DATA}
+          {DOD~RELEASE~NOTICE}
+        {CLASSIFICATION~AUTHORITY}{CLASSIFICATION}
+        {CUI~WARNING~BOX~FOR~CLASSIFIED~MATERIAL}{CLASSIFIED~CUI~WARNING}
+        {DISTRIBUTION~STATEMENT}{DISTRIBUTION}
+        {ADDITIONAL~HANDLING~NOTICE}{ADDITIONAL~NOTICE}
+      }
+      {#1}
+  }
+
+\cs_new_protected:Npn \ls_notice_box:nn #1#2
+  {
+    \bool_if:NTF \l_ls_compact_notices_bool
+      {\begin{lscompactnotice}{#1}%
+         {\bfseries\ls_compact_notice_heading:n {#1}.\par}%
+         \vspace{0.25pt}#2%
+       \end{lscompactnotice}}
+      {\LSNoticeBox{#1}{#2}}
+  }
+
+\cs_new_protected:Npn \ls_regulatory_warning:n #1
+  {
+    \bool_if:NTF \l_ls_compact_notices_bool
+      {\begin{lscompactwarning}#1\end{lscompactwarning}}
+      {\begin{lsregwarning}#1\end{lsregwarning}}
+  }
+
+\NewDocumentCommand{\LSProprietaryNotice}{}
+  {
+    \str_if_eq:VnTF \g_ls_proprietary_mode_tl {multi-owner}
+      {\ls_notice_box:nn {PROPRIETARY~OWNERS~AND~LEGENDS}
+        {\ls_multi_owner_proprietary_notice:}}
+      {\ls_notice_box:nn
+        {LINEAR~SPACE~PROPRIETARY}{\tl_use:N \g_ls_proprietary_notice_tl}}
+  }
+
+\cs_new_protected:Npn \ls_multi_owner_proprietary_notice:
+  {
+    The~following~proprietary-data~owners~and~their~reviewed~legends~or~
+    disclosures~apply:
+    \par\smallskip
+    \begin{tabular}{
+      @{}
+      >{\raggedright\arraybackslash}p{0.28\linewidth}
+      >{\raggedright\arraybackslash}p{0.66\linewidth}
+      @{}}
+      \textbf{Owner} & \textbf{Reviewed~legend/disclosure} \\
+      \seq_map_inline:Nn \g_ls_proprietary_owner_keys_seq
+        {
+          \textbf{\prop_item:Nn \g_ls_proprietary_owner_display_prop {##1}} &
+          \prop_item:Nn \g_ls_proprietary_owner_legend_prop {##1} \\
+        }
+    \end{tabular}
+  }
+
+\NewDocumentCommand{\LSCUIDesignationIndicator}{}
+  {
+    \ls_notice_box:nn {CUI~DESIGNATION~INDICATOR}{%
+      \begin{tabular}{@{}>{\bfseries}p{0.40\linewidth}p{0.54\linewidth}@{}}
+        \bool_set_false:N \l_tmpa_bool
+        \str_if_eq:VnT \g_ls_profile_tl {cui-dod}
+          {\bool_set_true:N \l_tmpa_bool}
+        \str_if_eq:VnT \g_ls_profile_tl {classified-dod}
+          {\bool_set_true:N \l_tmpa_bool}
+        \bool_if:NTF \l_tmpa_bool
+          {
+            Controlled~By: & \tl_use:N \g_ls_controlled_by_tl \\
+            Controlled~By: & \tl_use:N \g_ls_controlled_office_tl \\
+            CUI~Category: & \tl_use:N \g_ls_cui_categories_tl \\
+            \ls_cui_indicator_distribution_label: &
+              \ls_cui_indicator_distribution_value: \\
+            POC: & \tl_use:N \g_ls_control_poc_tl
+          }
+          {
+            Controlled~By: & \tl_use:N \g_ls_controlled_by_tl \\
+            CUI~Category: & \tl_use:N \g_ls_cui_categories_tl \\
+            \tl_if_blank:VF \g_ls_limited_dissemination_tl
+              {Limited~Dissemination~Control: &
+                \tl_use:N \g_ls_limited_dissemination_tl \\}
+            POC: & \tl_use:N \g_ls_control_poc_tl
+          }
+      \end{tabular}%
+    }
+  }
+
+\cs_new:Npn \ls_cui_indicator_distribution_label:
+  {
+    \str_if_eq:VnTF \g_ls_distribution_code_tl {none}
+      {Distribution/Dissemination~Control:}
+      {Distribution~Statement:}
+  }
+
+\cs_new:Npn \ls_cui_indicator_distribution_value:
+  {
+    \str_if_eq:VnTF \g_ls_distribution_code_tl {none}
+      {\tl_use:N \g_ls_limited_dissemination_tl}
+      {\tl_use:N \g_ls_distribution_code_tl}
+  }
+
+\NewDocumentCommand{\LSExportControlMetadata}{}
+  {
+    \ls_notice_box:nn {EXPORT-CONTROL~METADATA}{%
+      \begin{tabular}{@{}>{\bfseries}p{0.31\linewidth}p{0.63\linewidth}@{}}
+        Jurisdiction: & \tl_use:N \g_ls_export_jurisdiction_tl \\
+        Classification: & \tl_use:N \g_ls_export_classification_tl \\
+        Authorization: & \tl_use:N \g_ls_export_authorization_tl \\
+        Destination: & \tl_use:N \g_ls_export_destination_tl \\
+        End-user: & \tl_use:N \g_ls_export_end_user_tl \\
+        End-use: & \tl_use:N \g_ls_export_end_use_tl \\
+        Review~date: & \tl_use:N \g_ls_export_review_date_tl \\
+        Contact: & \tl_use:N \g_ls_export_contact_tl
+      \end{tabular}
+      \par\smallskip
+      \tl_use:N \g_ls_export_notice_tl
+    }
+  }
+
+\NewDocumentCommand{\LSClassificationAuthorityBlock}{}
+  {
+    \bool_gset_true:N \g_ls_classification_block_rendered_bool
+    \ls_notice_box:nn {CLASSIFICATION~AUTHORITY}{%
+      \begin{tabular}{@{}>{\bfseries}p{0.26\linewidth}p{0.68\linewidth}@{}}
+        Classified~By: & \tl_use:N \g_ls_classified_by_tl \\
+        \str_if_eq:VnTF \g_ls_authority_type_tl {original}
+          {Reason: & \tl_use:N \g_ls_classification_reason_tl \\}
+          {Derived~From: & \tl_use:N \g_ls_derived_from_tl \\}
+        Declassify~On: & \tl_use:N \g_ls_declassify_on_tl
+      \end{tabular}%
+    }
+  }
+
+\NewDocumentCommand{\LSCompactClassificationAuthorityBlock}{}
+  {
+    \bool_gset_true:N \g_ls_classification_block_rendered_bool
+    \begingroup
+      \setlength{\tabcolsep}{3pt}%
+      \renewcommand{\arraystretch}{1.04}%
+      \begin{tabular}{@{}>{\bfseries}l@{\hspace{0.45em}}p{0.69\linewidth}@{}}
+        Classified~By: & \tl_use:N \g_ls_classified_by_tl \\
+        \str_if_eq:VnTF \g_ls_authority_type_tl {original}
+          {Reason: & \tl_use:N \g_ls_classification_reason_tl \\}
+          {Derived~From: & \tl_use:N \g_ls_derived_from_tl \\}
+        Declassify~On: & \tl_use:N \g_ls_declassify_on_tl
+      \end{tabular}%
+    \endgroup
+  }
+
+\cs_new:Npn \ls_distribution_text:
+  {
+    \str_case:Vn \g_ls_distribution_code_tl
+      {
+        {A}
+          {Distribution~Statement~A.~Approved~for~public~release:~distribution~is~unlimited.}
+        {B}
+          {Distribution~Statement~B.~Distribution~authorized~to~U.S.~Government~agencies~
+           \tl_use:N \g_ls_distribution_category_tl\c_space_tl
+           \tl_use:N \g_ls_distribution_date_tl.\c_space_tl
+           Other~requests~for~this~document~must~be~referred~to~\tl_use:N \g_ls_distribution_office_tl.}
+        {C}
+          {Distribution~Statement~C.~Distribution~authorized~to~U.S.~Government~agencies~and~their~contractors~
+           \tl_use:N \g_ls_distribution_category_tl\c_space_tl
+           \tl_use:N \g_ls_distribution_date_tl.\c_space_tl
+           Other~requests~for~this~document~must~be~referred~to~\tl_use:N \g_ls_distribution_office_tl.}
+        {D}
+          {Distribution~Statement~D.~Distribution~authorized~to~the~Department~of~Defense~and~U.S.~DoD~contractors~only~
+           \tl_use:N \g_ls_distribution_category_tl\c_space_tl
+           \tl_use:N \g_ls_distribution_date_tl.\c_space_tl
+           Other~requests~for~this~document~must~be~referred~to~\tl_use:N \g_ls_distribution_office_tl.}
+        {E}
+          {Distribution~Statement~E.~Distribution~authorized~to~DoD~Components~only~
+           \tl_use:N \g_ls_distribution_category_tl\c_space_tl
+           \tl_use:N \g_ls_distribution_date_tl.\c_space_tl
+           Other~requests~for~this~document~must~be~referred~to~\tl_use:N \g_ls_distribution_office_tl.}
+        {F}
+          {Distribution~Statement~F.~Further~distribution~only~as~directed~by~
+           \tl_use:N \g_ls_distribution_office_tl\c_space_tl
+           \tl_use:N \g_ls_distribution_date_tl\c_space_tl
+           or~higher~DoD~authority.}
+      }
+  }
+
+\NewDocumentCommand{\LSDistributionNotice}{}
+  {
+    \str_if_eq:VnF \g_ls_distribution_code_tl {none}
+      {\ls_notice_box:nn {DISTRIBUTION~STATEMENT}{\ls_distribution_text:}}
+  }
+
+\cs_new:Npn \ls_classified_cui_warning:
+  {
+    This~content~is~classified~at~the~
+    \str_case:VnF \g_ls_classification_tl
+      {
+        {confidential}{CONFIDENTIAL}
+        {secret}{SECRET}
+        {top-secret}{TOP~SECRET}
+      }
+      {UNKNOWN}
+    \c_space_tl level~and~may~contain~elements~of~controlled~unclassified~information~
+    (CUI),~unclassified,~or~information~classified~at~a~lower~level~than~the~
+    overall~classification~displayed.~This~content~shall~not~be~used~as~a~
+    source~of~derivative~classification;~refer~instead~to~
+    \tl_use:N \g_ls_classified_cui_source_tl.~It~must~be~reviewed~for~both~
+    Classified~National~Security~Information~(CNSI)~and~CUI~in~accordance~
+    with~DoDI~5230.09~prior~to~public~release.
+    \tl_if_blank:VF \g_ls_classified_cui_contact_tl
+      {~Point~of~contact:~\tl_use:N \g_ls_classified_cui_contact_tl.}
+  }
+
+\cs_new:Npn \ls_dod_release_notice_text:
+  {
+    Export~of~information~contained~herein,~which~includes,~in~some~circumstances,~
+    release~to~foreign~nationals~within~the~United~States,~without~first~obtaining~
+    approval~or~license~from~the~Department~of~State~for~items~controlled~by~the~
+    International~Traffic~in~Arms~Regulations~(ITAR),~or~the~Department~of~Commerce~
+    for~items~controlled~by~the~Export~Administration~Regulations~(EAR),~may~
+    constitute~a~violation~of~law.
+    \par\smallskip
+    Under~22~U.S.C.~2778~the~penalty~for~unlawful~export~of~items~or~information~
+    controlled~under~the~ITAR~is~up~to~2~years~imprisonment,~or~a~fine~of~
+    \$100,000,~or~both.~Under~50~U.S.C.,~Appendix~2410,~the~penalty~for~unlawful~
+    export~of~items~or~information~controlled~under~the~EAR~is~a~fine~of~up~to~
+    \$1,000,000,~or~five~times~the~value~of~the~exports,~whichever~is~greater;~or~
+    for~an~individual,~imprisonment~of~up~to~10~years,~or~a~fine~of~up~to~
+    \$250,000,~or~both.
+    \par\smallskip
+    In~accordance~with~your~certification~that~establishes~you~as~a~``qualified~
+    U.S.~contractor,''~unauthorized~dissemination~of~this~information~is~prohibited~
+    and~may~result~in~disqualification~as~a~qualified~U.S.~contractor,~and~may~be~
+    considered~in~determining~your~eligibility~for~future~contracts~with~the~
+    Department~of~Defense.
+    \par\smallskip
+    The~U.S.~Government~assumes~no~liability~for~direct~patent~infringement,~or~
+    contributory~patent~infringement~or~misuse~of~technical~data.
+    \par\smallskip
+    The~U.S.~Government~does~not~warrant~the~adequacy,~accuracy,~currency,~or~
+    completeness~of~the~technical~data.
+    \par\smallskip
+    The~U.S.~Government~assumes~no~liability~for~loss,~damage,~or~injury~resulting~
+    from~manufacture~or~use~for~any~purpose~of~any~product,~article,~system,~or~
+    material~involving~reliance~upon~any~or~all~technical~data~furnished~in~
+    response~to~the~request~for~technical~data.
+    \par\smallskip
+    If~the~technical~data~furnished~by~the~Government~will~be~used~for~commercial~
+    manufacturing~or~other~profit~potential,~a~license~for~such~use~may~be~
+    necessary.~Any~payments~made~in~support~of~the~request~for~data~do~not~include~
+    or~involve~any~license~rights.
+    \par\smallskip
+    A~copy~of~this~notice~shall~be~provided~with~any~partial~or~complete~
+    reproduction~of~these~data~that~are~provided~to~qualified~U.S.~contractors.
+  }
+
+\NewDocumentCommand{\LSDoDReleaseNotice}{}
+  {
+    \bool_gset_true:N \g_ls_dod_release_notice_rendered_bool
+    \bool_if:NTF \g_ls_presentation_mode_bool
+      {
+        \par\medskip
+        {\sffamily\bfseries\color{LSCyan}%
+         NOTICE~TO~ACCOMPANY~THE~DISSEMINATION~OF~EXPORT-CONTROLLED~TECHNICAL~DATA\par}
+        \smallskip
+        \ls_dod_release_notice_text:\par
+      }
+      {\ls_notice_box:nn
+        {NOTICE~TO~ACCOMPANY~THE~DISSEMINATION~OF~EXPORT-CONTROLLED~TECHNICAL~DATA}
+        {\ls_dod_release_notice_text:}}
+  }
+
+\NewDocumentCommand{\LSDoDReleaseNoticePage}{}
+  {
+    \bool_if:NT \g_ls_dod_export_technical_information_bool
+      {
+        \clearpage
+        \thispagestyle{empty}
+        \vspace*{0.18in}
+        \LSWordmarkOnLight[0.40in]\par
+        \vspace{0.22in}
+        {\sffamily\bfseries\Large\color{LSNavy}%
+         Notice~accompanying~export-controlled~technical~data\par}
+        \vspace{0.12in}
+        \LSDoDReleaseNotice
+        \vfill
+        {\sffamily\scriptsize\color{LSSlate}%
+         Prescribed~text:~DoDD~5230.25,~Enclosure~5.~Verify~the~current~
+         controlling~issuance~before~release.\par}
+        \clearpage
+      }
+  }
+
+\cs_new_protected:Npn \ls_render_marking_notices:
+  {
+    \bool_gset_true:N \g_ls_marking_notices_rendered_bool
+    \clist_if_in:NnT \g_ls_controls_clist {proprietary}
+      {\LSProprietaryNotice}
+    \clist_if_in:NnTF \g_ls_controls_clist {ear}
+      {\LSExportControlMetadata}
+      {
+        \clist_if_in:NnT \g_ls_controls_clist {itar}
+          {\LSExportControlMetadata}
+      }
+    \bool_if:NT \g_ls_dod_export_technical_information_bool
+      {
+        \ls_regulatory_warning:n {\LSDoDExportControlWarning}
+        \bool_if:NF \l_ls_compact_notices_bool
+          {\LSDoDReleaseNotice}
+      }
+    \ls_profile_classified:T {\LSClassificationAuthorityBlock}
+    \str_if_eq:VnT \g_ls_profile_tl {classified-dod}
+      {\clist_if_in:NnT \g_ls_controls_clist {cui}
+        {\ls_notice_box:nn {CUI~WARNING~BOX~FOR~CLASSIFIED~MATERIAL}
+          {\ls_classified_cui_warning:}}}
+    \tl_if_blank:VF \g_ls_custom_notice_tl
+      {\ls_notice_box:nn {ADDITIONAL~HANDLING~NOTICE}{\tl_use:N \g_ls_custom_notice_tl}}
+    \clist_if_in:NnT \g_ls_controls_clist {cui}
+      {\LSCUIDesignationIndicator}
+    \LSDistributionNotice
+  }
+
+% Dense title pages use two balanced columns so complete notices remain on the
+% cover at a readable size. Each applicable notice is still emitted exactly
+% once; this is a layout change, not a shortened-content path.
+\cs_new_protected:Npn \ls_render_dense_marking_notices:
+  {
+    \bool_gset_true:N \g_ls_marking_notices_rendered_bool
+    \noindent
+    \begin{minipage}[b]{0.492\linewidth}
+      \vspace{0pt}
+      \clist_if_in:NnT \g_ls_controls_clist {proprietary}
+        {\LSProprietaryNotice}
+      \clist_if_in:NnTF \g_ls_controls_clist {ear}
+        {\LSExportControlMetadata}
+        {
+          \clist_if_in:NnT \g_ls_controls_clist {itar}
+            {\LSExportControlMetadata}
+        }
+      \bool_if:NT \g_ls_dod_export_technical_information_bool
+        {\ls_regulatory_warning:n {\LSDoDExportControlWarning}}
+      \tl_if_blank:VF \g_ls_custom_notice_tl
+        {\ls_notice_box:nn {ADDITIONAL~HANDLING~NOTICE}
+          {\tl_use:N \g_ls_custom_notice_tl}}
+    \end{minipage}\hfill
+    \begin{minipage}[b]{0.492\linewidth}
+      \vspace{0pt}
+      \ls_profile_classified:T {\LSClassificationAuthorityBlock}
+      \str_if_eq:VnT \g_ls_profile_tl {classified-dod}
+        {\clist_if_in:NnT \g_ls_controls_clist {cui}
+          {\ls_notice_box:nn {CUI~WARNING~BOX~FOR~CLASSIFIED~MATERIAL}
+            {\ls_classified_cui_warning:}}}
+      \clist_if_in:NnT \g_ls_controls_clist {cui}
+        {\LSCUIDesignationIndicator}
+      \LSDistributionNotice
+    \end{minipage}\par
+  }
+
+\NewDocumentCommand{\LSMarkingNotices}{}
+  {
+    \group_begin:
+      \bool_set_false:N \l_ls_compact_notices_bool
+      \ls_render_marking_notices:
+    \group_end:
+  }
+
+\NewDocumentCommand{\LSCompactMarkingNotices}{}
+  {
+    \group_begin:
+      \bool_set_true:N \l_ls_compact_notices_bool
+      \setlength{\tabcolsep}{2pt}
+      \renewcommand{\arraystretch}{0.95}
+      \ls_dod_restricted_distribution:TF
+        {\ls_render_dense_marking_notices:}
+        {\ls_notices_dense:TF
+          {\ls_render_dense_marking_notices:}
+          {\ls_render_marking_notices:}}
+    \group_end:
+  }
+
+\cs_new_protected:Npn \ls_validate_required_notices:
+  {
+    \ls_notices_required:T
+      {
+        \bool_if:NF \g_ls_marking_notices_rendered_bool
+          {\ls_error:nn {Required~title-page~or~disclosure~notices~were~not~rendered}
+            {Use~the~class~title~macro~or~\string\LSMarkingNotices;~the~stock
+             Beamer~title~page~renders~complete~compact~cover~notices.}}
+      }
+    \bool_if:NT \g_ls_dod_export_technical_information_bool
+      {
+        \bool_if:NF \g_ls_dod_release_notice_rendered_bool
+          {\ls_error:nn {Required~DoDD~5230.25~release~notice~was~not~rendered}
+            {Use~the~stock~document~title~macro~or~render~\string\LSDoDReleaseNotice~with~the~disseminated~information.}}
+      }
+  }
+\AtEndDocument{\ls_validate_required_notices:}
+
+% ---------------------------------------------------------------------------
+% Exact presets. Use only when the cited regulation/instruction actually applies.
+% ---------------------------------------------------------------------------
+\NewDocumentCommand{\LSDistributionStatementA}{}
+  {
+    \ls_error:nn {Direct~distribution-statement~constructors~are~disabled}
+      {Configure~distribution-code~and~its~required~structured~fields~in~\string\LSMarkingSetup.}
+  }
+\NewDocumentCommand{\LSDistributionStatementB}{m m m}
+  {\LSDistributionStatementA}
+\NewDocumentCommand{\LSDistributionStatementC}{m m m}
+  {\LSDistributionStatementA}
+\NewDocumentCommand{\LSDistributionStatementD}{m m m}
+  {\LSDistributionStatementA}
+\NewDocumentCommand{\LSDistributionStatementE}{m m m}
+  {\LSDistributionStatementA}
+\NewDocumentCommand{\LSDistributionStatementF}{m m}
+  {\LSDistributionStatementA}
+
+\cs_new:Npn \ls_dod_export_control_warning_text:
+  {This~document~contains~technical~data~whose~export~is~restricted~by~the~Arms~Export~Control~Act~(Section~2751~of~Title~22,~United~States~Code)~or~the~Export~Control~Reform~Act~of~2018~(Chapter~58~Sections~4801-4852~of~Title~50,~United~States~Code).~Violations~of~these~export~laws~are~subject~to~severe~criminal~penalties.~Disseminate~in~accordance~with~provisions~of~DoD~Directive~5230.25~and~DoD~Instruction~2040.02.}
+
+\NewDocumentCommand{\LSDoDExportControlWarning}{}
+  {\textbf{WARNING}~-~\ls_dod_export_control_warning_text:}
+
+\NewDocumentCommand{\LSEARDestinationControlStatement}{}
+  {These~items~are~controlled~by~the~U.S.~Government~and~authorized~for~export~only~to~the~country~of~ultimate~destination~for~use~by~the~ultimate~consignee~or~end-user(s)~herein~identified.~They~may~not~be~resold,~transferred,~or~otherwise~disposed~of,~to~any~other~country~or~to~any~person~other~than~the~authorized~ultimate~consignee~or~end-user(s),~either~in~their~original~form~or~after~being~incorporated~into~other~items,~without~first~obtaining~approval~from~the~U.S.~government~or~as~otherwise~authorized~by~U.S.~law~and~regulations.}
+\NewDocumentCommand{\LSITARDestinationControlStatement}{}
+  {These~items~are~controlled~by~the~U.S.~government~and~authorized~for~export~only~to~the~country~of~ultimate~destination~for~use~by~the~ultimate~consignee~or~end-user(s)~herein~identified.~They~may~not~be~resold,~transferred,~or~otherwise~disposed~of,~to~any~other~country~or~to~any~person~other~than~the~authorized~ultimate~consignee~or~end-user(s),~either~in~their~original~form~or~after~being~incorporated~into~other~items,~without~first~obtaining~approval~from~the~U.S.~government~or~as~otherwise~authorized~by~U.S.~law~and~regulations.}
+\ExplSyntaxOff
+\endinput

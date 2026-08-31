@@ -1,0 +1,9 @@
+% Expected failure before shipout: the unclassified profile cannot carry classified content.
+\documentclass[letterpaper]{article}
+\usepackage{linearspace-markings}
+\LSMarkingSetup{
+  profile=unclassified,
+  classification=confidential,
+  controls={}
+}
+\begin{document}This content must never render.\end{document}

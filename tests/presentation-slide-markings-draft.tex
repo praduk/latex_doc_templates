@@ -1,0 +1,64 @@
+% Synthetic slide-local marking/layout integration test. LuaLaTeX draft mode.
+% NO CONTROLLED OR CLASSIFIED INFORMATION.
+\documentclass[aspectratio=169,professionalfonts]{beamer}
+\usetheme{LinearSpace}
+
+\LSSetup{
+  title={Synthetic CUI Deck Marking Test},
+  short-title={Synthetic Marking Test},
+  author={Linear Space Test Suite},
+  organization={Linear Space},
+  document-id={LS-TEST-PRES-MARK},
+  revision={A},
+  status={Synthetic Test Only},
+  date={August 31, 2026}
+}
+\LSMarkingSetup{
+  profile=cui-general,
+  classification=none,
+  controls={cui},
+  operator-confirms-controlled-environment=true,
+  banner-text={CUI},
+  controlled-by={Synthetic Test Authority},
+  cui-categories={Synthetic Test Category},
+  control-poc={test@example.invalid}
+}
+\LSEnableSyntheticDemoWatermark
+\title{\texorpdfstring{\LSCUI{Synthetic CUI deck marking test}}{Synthetic CUI deck marking test}}
+\author{\LSAuthor}
+\date{\LSDate}
+
+\begin{document}
+\begin{frame}\titlepage\end{frame}
+
+\begin{LSSlideMarking}{unclassified}
+  \LSDecisionSlide
+    {\LSU{UNCLASSIFIED decision helper}}
+    {\LSU{Option A}}{\LSU{Synthetic body.}}
+    {\LSU{Option B}}{\LSU{Synthetic body.}}
+    {\LSU{Synthetic decision statement.}}
+\end{LSSlideMarking}
+
+\begin{LSSlideMarking}[CUI//SP-SYNTHETIC]{cui}
+  \begin{LSTeamSlide}[eyebrow={\LSCUI{Team}}]{\LSCUI{CUI team helper}}
+    \LSTeamMember[A1]{}{\LSCUI{Synthetic A}}{\LSCUI{Role}}{\LSCUI{Synthetic body.}}
+    \LSTeamMember[B2]{}{\LSCUI{Synthetic B}}{\LSCUI{Role}}{\LSCUI{Synthetic body.}}
+  \end{LSTeamSlide}
+\end{LSSlideMarking}
+
+\begin{LSSlideMarking}{unclassified}
+  \begin{LSMilestoneSlide}[eyebrow={\LSU{Roadmap}}]{\LSU{UNCLASSIFIED milestone helper}}
+    \LSMilestone[status=in-progress]{1}{\LSU{Synthetic gate}}
+      {\LSU{Synthetic body.}}{\LSU{Q1}}
+  \end{LSMilestoneSlide}
+\end{LSSlideMarking}
+
+\begin{LSSlideMarking}{cui}
+  \begin{LSBackgroundFrame}[opacity=0]{red-blue-galactic-core}
+    \frametitle{\LSCUI{CUI background-frame helper}}
+    \vfill
+    \LSCUI{Synthetic body.}
+    \vfill
+  \end{LSBackgroundFrame}
+\end{LSSlideMarking}
+\end{document}

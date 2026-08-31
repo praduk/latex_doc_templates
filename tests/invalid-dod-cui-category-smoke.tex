@@ -1,0 +1,23 @@
+% Expected failure: DoD unclassified CTI must identify the CUI category as CTI.
+\documentclass[letterpaper]{article}
+\usepackage{linearspace-markings}
+\LSMarkingSetup{
+  profile=cui-dod,
+  classification=none,
+  controls={cui},
+  operator-confirms-controlled-environment=true,
+  banner-text={CUI},
+  controlled-by={Synthetic DoD Component},
+  controlled-office={Synthetic Program Office},
+  cui-categories={PRVCY},
+  control-poc={test@example.invalid},
+  distribution-code=B,
+  distribution-categories={Controlled Technical Information},
+  distribution-date={30 AUG 2026},
+  distribution-office={Synthetic Program Office},
+  operator-confirms-dod-distribution-authority=true
+}
+\begin{document}
+\LSMarkingNotices
+Synthetic expected-failure text; not CUI.
+\end{document}

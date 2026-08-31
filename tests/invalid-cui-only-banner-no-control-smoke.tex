@@ -1,0 +1,8 @@
+% Expected failure before shipout: alternate CUI-only banners require an applicable CUI control.
+\documentclass[letterpaper]{article}
+\usepackage{linearspace-markings}
+\LSMarkingSetup{profile=unclassified,classification=none,controls={}}
+\begin{document}
+\LSValidateCUIOnlyBanner{CUI}
+This content must never render.
+\end{document}

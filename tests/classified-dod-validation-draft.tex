@@ -1,0 +1,33 @@
+% Synthetic marking-system test. Run with LuaLaTeX -draftmode only.
+% This file contains no classified information and is not classification authority.
+\documentclass[letterpaper]{article}
+\usepackage{linearspace-markings}
+\LSMarkingSetup{
+  profile=classified-dod,
+  classification=secret,
+  controls={cui},
+  operator-confirms-controlled-environment=true,
+  operator-confirms-classified-environment=true,
+  banner-text={SECRET},
+  controlled-by={Synthetic DoD Component},
+  controlled-office={Synthetic Program Office},
+  cui-categories={CTI},
+  control-poc={test@example.invalid},
+  authority-type=derivative,
+  classified-by={Synthetic Test Classifier},
+  derived-from={Synthetic Test Security Classification Guide},
+  declassify-on={30 AUG 2036},
+  classified-cui-source={the synthetic test classification guide},
+  distribution-code=E,
+  distribution-category={Controlled Technical Information},
+  distribution-date={30 AUG 2026},
+  distribution-office={Synthetic Program Office},
+  operator-confirms-dod-distribution-authority=true
+}
+\begin{document}
+\LSMarkingNotices
+\LSU{Synthetic unclassified test text.}
+\LSCUI{Synthetic CUI-marking renderer test text; not actual CUI.}
+\LSC{Synthetic Confidential portion-mark renderer test text; not classified.}
+\LSS{Synthetic classification-marking renderer test text; not classified.}
+\end{document}

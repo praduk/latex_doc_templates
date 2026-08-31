@@ -1,0 +1,6 @@
+% Expected failure before shipout: a CUI-only alternate cannot carry a classification term.
+\documentclass[letterpaper]{article}
+\usepackage{linearspace-markings}
+\LSMarkingSetup{profile=cui-general,classification=none,controls={cui}}
+\LSValidateCUIOnlyBanner{CUI//SECRET}
+\begin{document}This content must never render.\end{document}

@@ -1,0 +1,41 @@
+% Synthetic marking-system test. Run with LuaLaTeX -draftmode only.
+% This file contains no classified or controlled information and is not classification authority.
+\documentclass[letterpaper]{article}
+\usepackage{linearspace-markings}
+\LSMarkingSetup{
+  profile=classified-general,
+  classification=secret,
+  controls={cui},
+  operator-confirms-controlled-environment=true,
+  operator-confirms-classified-environment=true,
+  banner-text={SECRET//CUI},
+  controlled-by={Synthetic Test Authority},
+  cui-categories={Synthetic Category},
+  control-poc={test@example.invalid},
+  authority-type=derivative,
+  classified-by={Synthetic Test Classifier},
+  derived-from={Synthetic Test Security Classification Guide},
+  declassify-on={30 AUG 2036}
+}
+\begin{document}
+\LSValidateCUIOnlyBanner{CUI//SP-SYNTHETIC}
+\ExplSyntaxOn
+\tl_set:Nx \l_tmpa_tl {\LSValidatedBannerText}
+\tl_if_eq:NnF \l_tmpa_tl {CUI//SP-SYNTHETIC}
+  {\PackageError{linearspace-test}{CUI-only~validated-banner~regression}{}}
+\tl_set:Nx \l_tmpa_tl {\LSBannerText}
+\tl_if_eq:NnF \l_tmpa_tl {SECRET//CUI}
+  {\PackageError{linearspace-test}{CUI-only~validation~mutated~the~overall~banner}{}}
+\ExplSyntaxOff
+\LSValidateCUIOnlyBanner{CONTROLLED}
+\ExplSyntaxOn
+\tl_set:Nx \l_tmpa_tl {\LSValidatedBannerText}
+\tl_if_eq:NnF \l_tmpa_tl {CONTROLLED}
+  {\PackageError{linearspace-test}{CONTROLLED~alternate-banner~regression}{}}
+\tl_set:Nx \l_tmpa_tl {\LSBannerText}
+\tl_if_eq:NnF \l_tmpa_tl {SECRET//CUI}
+  {\PackageError{linearspace-test}{Alternate~banner~validation~mutated~the~overall~banner}{}}
+\ExplSyntaxOff
+\LSMarkingNotices
+\LSU{Synthetic unclassified slide-content analogue; not classified.}
+\end{document}

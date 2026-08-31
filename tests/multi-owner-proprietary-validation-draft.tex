@@ -1,0 +1,36 @@
+% Synthetic marking-system test. Run with LuaLaTeX -draftmode only.
+% This file contains no actual proprietary, controlled, or classified information.
+\documentclass{linearspace-report}
+
+\LSSetup{
+  title={Synthetic Multi-Owner Proprietary Test},
+  short-title={Synthetic Multi-Owner Test},
+  author={Linear Space Test Suite},
+  organization={Linear Space},
+  document-id={LS-TEST-PROP-0001},
+  revision={A},
+  status={Synthetic Test Only},
+  date={30 August 2026}
+}
+
+\LSMarkingSetup{
+  profile=corporate,
+  classification=none,
+  controls={proprietary},
+  proprietary-mode=multi-owner
+}
+
+\LSDeclareProprietaryOwner{Synthetic Owner Alpha}
+  {Synthetic Owner Alpha proprietary information; use or disclosure requires its reviewed authorization.}
+\LSDeclareProprietaryOwner{Synthetic Owner Beta}
+  {Synthetic Owner Beta proprietary information; use or disclosure requires its reviewed authorization.}
+
+\begin{document}
+\ExplSyntaxOn
+\tl_set:Nx \l_tmpa_tl {\LSBannerText}
+\tl_if_eq:NnF \l_tmpa_tl {PROPRIETARY,~SEE~TITLE~PAGE}
+  {\PackageError{linearspace-test}{Multi-owner~corporate~banner~regression}{}}
+\ExplSyntaxOff
+\LSMakeReportTitle
+Synthetic multi-owner layout-test body; not proprietary or controlled.
+\end{document}

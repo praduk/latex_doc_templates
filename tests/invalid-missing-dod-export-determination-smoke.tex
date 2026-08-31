@@ -1,0 +1,31 @@
+% Expected failure: jurisdiction metadata alone cannot make the reviewed DoD determination.
+\documentclass[letterpaper]{article}
+\usepackage{linearspace-markings}
+\LSMarkingSetup{
+  profile=cui-dod,
+  classification=none,
+  controls={cui,ear},
+  operator-confirms-controlled-environment=true,
+  banner-text={CUI},
+  controlled-by={Synthetic DoD Component},
+  controlled-office={Synthetic Program Office},
+  cui-categories={CTI},
+  control-poc={test@example.invalid},
+  export-jurisdiction={EAR},
+  export-classification={Synthetic EAR99 review result},
+  export-authorization={Synthetic validation only},
+  export-destination={Synthetic validation only},
+  export-end-user={Synthetic validation only},
+  export-end-use={Synthetic validation only},
+  export-contact={test@example.invalid},
+  export-review-date={30 AUG 2026},
+  distribution-code=B,
+  distribution-categories={Controlled Technical Information},
+  distribution-date={30 AUG 2026},
+  distribution-office={Synthetic Program Office},
+  operator-confirms-dod-distribution-authority=true
+}
+\begin{document}
+\LSMarkingNotices
+Synthetic expected-failure text; not controlled data.
+\end{document}

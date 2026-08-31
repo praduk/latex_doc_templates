@@ -1,0 +1,37 @@
+% Synthetic marking-system test. Run with LuaLaTeX -draftmode only.
+% This file contains no CUI or classified information.
+\documentclass[letterpaper]{article}
+\usepackage{linearspace-markings}
+\LSMarkingSetup{
+  profile=cui-dod,
+  classification=none,
+  controls={cui},
+  operator-confirms-controlled-environment=true,
+  banner-text={CUI},
+  controlled-by={Synthetic DoD Component},
+  controlled-office={Synthetic Program Office},
+  cui-categories={CTI},
+  control-poc={test@example.invalid},
+  distribution-code=D,
+  distribution-category={Controlled Technical Information},
+  distribution-date={30 AUG 2026},
+  distribution-office={Synthetic Program Office},
+  operator-confirms-dod-distribution-authority=true
+}
+\begin{document}
+\ExplSyntaxOn
+\tl_set:Nx \l_tmpa_tl {\ls_distribution_text:}
+\tl_if_eq:NnF \l_tmpa_tl
+  {Distribution~Statement~D.~Distribution~authorized~to~the~Department~of~Defense~and~U.S.~DoD~contractors~only~Controlled~Technical~Information~30~AUG~2026.~Other~requests~for~this~document~must~be~referred~to~Synthetic~Program~Office.}
+  {\PackageError{linearspace-test}{Statement~D~wording~regression}{}}
+\tl_set:Nx \l_tmpa_tl {\ls_cui_indicator_distribution_label:}
+\tl_if_eq:NnF \l_tmpa_tl {Distribution~Statement:}
+  {\PackageError{linearspace-test}{DoD~CUI~distribution-label~regression}{}}
+\tl_set:Nx \l_tmpa_tl {\ls_cui_indicator_distribution_value:}
+\tl_if_eq:NnF \l_tmpa_tl {D}
+  {\PackageError{linearspace-test}{DoD~CUI~distribution-code~regression}{}}
+\ExplSyntaxOff
+\LSMarkingNotices
+\LSU{Synthetic unclassified test text.}
+\LSCUI{Synthetic CUI-marking renderer test text; not actual CUI.}
+\end{document}

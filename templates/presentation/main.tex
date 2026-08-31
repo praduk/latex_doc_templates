@@ -1,0 +1,239 @@
+% !TeX program = lualatex
+\documentclass[aspectratio=169,professionalfonts]{beamer}
+\usetheme{LinearSpace}
+\usepackage[backend=biber,style=ieee,sorting=none,maxnames=4]{biblatex}
+\addbibresource{templates/shared-data/references.bib}
+
+% Acronyms are local, deterministic, and require no glossary/index build step.
+\LSDeclareAcronym{gnc}{GNC}{guidance, navigation, and control}
+\LSDeclareAcronym{ekf}{EKF}{extended Kalman filter}
+\LSDeclareAcronym{cots}{COTS}{commercial off-the-shelf}
+% Declared but unused entries are intentionally omitted from \LSAcronymFrame.
+\LSDeclareAcronym{tvc}{TVC}{thrust vector control}
+
+\LSSetup{
+  title={Presentation Template},
+  subtitle={A dark, technical system for investor, customer, and engineering narratives},
+  short-title={Presentation Template},
+  author={Linear Space},
+  organization={Linear Space},
+  document-id={LS-PRES-0001},
+  revision={A},
+  status={Draft},
+  date={\today}
+}
+
+\LSMarkingSetup{
+  profile=uncontrolled,
+  classification=none,
+  controls={}
+}
+
+% Registered names and direct image paths are both accepted.  Optional focal
+% shifts preserve cover cropping while moving the subject inside the frame.
+\LSSetTitleBackground{red-blue-galactic-core}
+\LSTitleBackgroundFocus{0in}{0in}
+\LSTitleBackgroundOverlay{0} % fully transparent; no part of the image is dimmed
+
+\title{\LSTitle}
+\subtitle{\LSSubtitle}
+\author{\LSAuthor}
+\date{\LSDate}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+  \note{[Source] Owner-supplied red-and-blue galactic-core reference image. See assets/ASSET_PROVENANCE.md.}
+\end{frame}
+
+\begin{frame}{Lead with the decision, not the agenda}
+  \vfill
+  \LSStatement{One claim per slide. Evidence that earns it. A clear move
+  toward the decision.}
+  \vspace{0.32in}
+  {\color{LSDeckLime}\rule{1.25in}{3pt}}
+  \vfill
+\end{frame}
+
+\LSSectionSlide[0.46]
+  {milky-way-panorama}
+  {Section 01}
+  {Build the argument from first principles}
+  [{[Sources] Background: ESO/S. Brunier. See assets/ASSET_PROVENANCE.md.}]
+
+\begin{frame}{Make the governing model explicit}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.49\textwidth}
+      {\fontsize{18}{23}\selectfont
+      State the variables, frames, assumptions, and units before presenting a
+      \LSAcronym{gnc} result. The audience should be able to tell what would
+      invalidate the conclusion.\par}
+      \vspace{0.24in}
+      \begin{block}{Example state}
+        \[
+          \vect{x}=
+          \begin{bmatrix}
+            \delta\vect{\theta}^{\transpose} & \vect{b}^{\transpose}
+          \end{bmatrix}^{\transpose}
+        \]
+      \end{block}
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      {\fontsize{18}{22}\selectfont
+        \begin{align*}
+          \vect{x}_{k+1} &= \mat{\Phi}_k\vect{x}_k + \mat{G}_k\vect{w}_k,\\
+          \mat{P}_{k+1}^{-} &=
+            \mat{\Phi}_k\mat{P}_{k}^{+}\mat{\Phi}_k^{\transpose}
+            + \mat{G}_k\mat{Q}_k\mat{G}_k^{\transpose}.
+        \end{align*}
+      }
+      {\fontsize{15}{19}\selectfont\color{LSDeckMint}
+      One \LSAcronym{ekf} equation, one interpretation, one stated
+      limitation. See \autocite{maybeck1979}.\par}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Make the hierarchy visible at a glance}
+  \begin{LSBullets}
+    \item Lead with the conclusion the audience must evaluate.
+    \item Put evidence in descending order of decision value.
+      \begin{itemize}
+        \item Separate measured results from modeled projections.
+        \item Put assumptions and source dates next to the claim.
+      \end{itemize}
+    \item End with one owner, one action, and one date.
+  \end{LSBullets}
+\end{frame}
+
+\begin{frame}{Show the threshold and the trend together}
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+      linearspace dark,
+      width=8.65in,
+      height=3.25in,
+      xlabel={Time (s)},
+      ylabel={Angular error (mrad)},
+      xmin=0,xmax=10,
+      ymin=0,ymax=2,
+      legend columns=3,
+      legend pos=north east,
+    ]
+      \addplot table[x=time,y=error,col sep=comma]
+        {templates/shared-data/estimation-error.csv};
+      \addlegendentry{Observed error}
+      \addplot table[x=time,y=one_sigma,col sep=comma]
+        {templates/shared-data/estimation-error.csv};
+      \addlegendentry{One-sigma envelope}
+      \addplot table[x=time,y=requirement,col sep=comma]
+        {templates/shared-data/estimation-error.csv};
+      \addlegendentry{Requirement}
+    \end{axis}
+  \end{tikzpicture}
+  \par\vspace{0.08in}
+  {\fontsize{14}{17}\selectfont\color{LSDeckOffWhite}
+  Synthetic data for template demonstration; never imply measured performance.\par}
+\end{frame}
+
+\LSDecisionSlide
+  {Use layout to expose the tradeoff}
+  {Analysis gives breadth}
+  {Efficiently explore combinations that are impractical to test, while making
+   model uncertainty visible.}
+  {Test gives contact with reality}
+  {Challenge the assumptions that dominate the decision and quantify the
+   measurement uncertainty.}
+  {Center view: use the smallest test campaign that can falsify the dominant
+   model assumptions, then retain analysis for broad coverage.}
+
+\begin{LSMilestoneSlide}[
+  background=milky-way-panorama,
+  % The API default is overlay=0 (fully transparent). This example deliberately
+  % darkens a detailed photograph so the five text cards remain legible.
+  overlay=0.72,
+  eyebrow={Synthetic execution plan}
+]{Five gates make the plan credible}
+  \LSMilestone[status=completed]{01}{Architecture}
+    {Decision-driving interfaces are frozen.}{Q4 2026}
+  \LSMilestone[status=in-progress]{02}{Prototype}
+    {Retire the dominant technical risk.}{Q1 2027}
+  \LSMilestone[status=upcoming]{03}{Qualification}
+    {Prove margin against the environment.}{Q2 2027}
+  \LSMilestone[status=upcoming]{04}{Pilot}
+    {Validate operations with a launch customer.}{Q3 2027}
+  \LSMilestone[status=upcoming]{05}{Scale}
+    {Release repeatable production capacity.}{Q1 2028}
+\end{LSMilestoneSlide}
+
+% Replace the blank photo argument with an authorized portrait path.  These
+% deliberately synthetic placeholders do not imply real people or credentials.
+\begin{LSTeamSlide}[
+  background=webb-clouds,
+  overlay=0.72,
+  eyebrow={Synthetic layout demonstration}
+]{Put accountable operators behind the plan}
+  \LSTeamMember[A1]{}{Synthetic Profile A}{Program lead (demo)}
+    {Owns customer outcomes, program cadence, and the investment decision.}
+  \LSTeamMember[B2]{}{Synthetic Profile B}{Technical lead (demo)}
+    {Owns requirements, verification evidence, and engineering closure.}
+\end{LSTeamSlide}
+
+\begin{frame}{End with a concrete decision}
+  \vspace{0.15in}
+  \LSMetric{01}{Decision stated in one sentence}
+  \hfill
+  \LSMetric{02}{Evidence tied to the decision}
+  \hfill
+  \LSMetric{03}{Owner and date for every next action}
+  \vfill
+  {\fontsize{28}{34}\selectfont\bfseries
+  Ask for the decision the audience is actually authorized to make.\par}
+\end{frame}
+
+\LSClosingSlide[webb-clouds]
+  {Resolve the opening question.\\Name the decision.\\Make the next move unmistakable.}
+  {Schedule the decision review}
+  {linearspace.com}
+
+\LSAcronymFrame
+
+\nocite{schaub2018}
+\LSReferencesFrame
+
+\begin{frame}[t]{Image credits and reuse terms}
+  {\fontsize{12.5}{15.5}\selectfont\color{LSDeckMint}
+  Title background: owner-supplied red-and-blue galactic-core reference image.\par}
+  \vspace{0.14in}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.48\textwidth}
+      {\fontsize{17}{20}\selectfont\bfseries\color{LSDeckLime}
+      Molecular Cloud Chamaeleon I\par}
+      \vspace{0.10in}
+      {\fontsize{12.5}{15.5}\selectfont\RaggedRight
+      NASA, ESA, CSA, and M. Zamani (ESA/Webb); Science: F. Sun (Steward
+      Observatory), Z. Smith (Open University), and the Ice Age ERS Team.
+      Cropped and resized by Linear Space.\par
+      \vspace{0.10in}
+      \href{https://esawebb.org/images/weic2303a/}{Source image}\par
+      \href{https://esawebb.org/copyright/}{ESA/Webb reuse terms --- CC BY 4.0 unless noted}\par}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      {\fontsize{17}{20}\selectfont\bfseries\color{LSDeckGreen}
+      The Milky Way panorama\par}
+      \vspace{0.10in}
+      {\fontsize{12.5}{15.5}\selectfont\RaggedRight
+      ESO/S. Brunier. Cover-cropped at render time by the template.\par
+      \vspace{0.10in}
+      \href{https://www.eso.org/public/images/eso0932a/}{Source image}\par
+      \href{https://www.eso.org/public/outreach/copyright/}{ESO reuse terms --- CC BY 4.0 unless noted}\par}
+    \end{column}
+  \end{columns}
+  \vfill
+  {\fontsize{12.5}{15.5}\selectfont\color{LSDeckMint}
+  Keep complete, visible credits with every published derivative. The full
+  repository record is in \texttt{assets/ASSET\_PROVENANCE.md}.\par}
+\end{frame}
+
+\end{document}

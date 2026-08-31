@@ -1,0 +1,17 @@
+% Expected failure before shipout: every page of this CUI document needs one banner.
+\documentclass[letterpaper]{article}
+\usepackage{linearspace-markings}
+\LSMarkingSetup{
+  profile=cui-general,
+  classification=none,
+  controls={cui},
+  operator-confirms-controlled-environment=true,
+  banner-text={CUI//SP-CTI},
+  controlled-by={Synthetic Agency Office},
+  cui-categories={Synthetic Test Category},
+  control-poc={test@example.invalid}
+}
+\begin{document}
+\LSThisPageBanner{CUI}
+Synthetic test.
+\end{document}

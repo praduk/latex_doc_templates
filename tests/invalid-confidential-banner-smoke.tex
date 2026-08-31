@@ -1,0 +1,16 @@
+% Expected failure before shipout: Confidential output cannot use a Secret banner.
+% This file contains no classified information.
+\documentclass[letterpaper]{article}
+\usepackage{linearspace-markings}
+\LSMarkingSetup{
+  profile=classified-general,
+  classification=confidential,
+  controls={},
+  operator-confirms-classified-environment=true,
+  banner-text={SECRET},
+  authority-type=derivative,
+  classified-by={Synthetic Test Classifier},
+  derived-from={Synthetic Test Security Classification Guide},
+  declassify-on={30 AUG 2036}
+}
+\begin{document}This content must never render.\end{document}

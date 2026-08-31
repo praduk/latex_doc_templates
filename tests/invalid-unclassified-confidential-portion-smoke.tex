@@ -1,0 +1,7 @@
+% Expected failure before shipout: (C) is a classified portion mark.
+\documentclass[letterpaper]{article}
+\usepackage{linearspace-markings}
+\LSMarkingSetup{profile=corporate,classification=none,controls={}}
+\begin{document}
+\LSC{This content must never render.}
+\end{document}

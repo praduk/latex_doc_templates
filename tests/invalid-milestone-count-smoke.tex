@@ -1,0 +1,29 @@
+% Expected failure: milestone slides accept at most ten entries.
+\documentclass[aspectratio=169,professionalfonts]{beamer}
+\usetheme{LinearSpace}
+\LSSetup{
+  title={Synthetic Invalid Milestone Count Test},
+  short-title={Invalid Milestone Test},
+  author={Linear Space Test Suite},
+  organization={Linear Space},
+  document-id={LS-TEST-BAD-MILESTONE},
+  revision={A},
+  status={Synthetic Test Only},
+  date={August 31, 2026}
+}
+\LSMarkingSetup{profile=uncontrolled,classification=none,controls={}}
+\begin{document}
+\begin{LSMilestoneSlide}{This must fail before rendering}
+  \LSMilestone{1}{One}{Synthetic.}{Q1}
+  \LSMilestone{2}{Two}{Synthetic.}{Q2}
+  \LSMilestone{3}{Three}{Synthetic.}{Q3}
+  \LSMilestone{4}{Four}{Synthetic.}{Q4}
+  \LSMilestone{5}{Five}{Synthetic.}{Q5}
+  \LSMilestone{6}{Six}{Synthetic.}{Q6}
+  \LSMilestone{7}{Seven}{Synthetic.}{Q7}
+  \LSMilestone{8}{Eight}{Synthetic.}{Q8}
+  \LSMilestone{9}{Nine}{Synthetic.}{Q9}
+  \LSMilestone{10}{Ten}{Synthetic.}{Q10}
+  \LSMilestone{11}{Eleven}{Synthetic.}{Q11}
+\end{LSMilestoneSlide}
+\end{document}

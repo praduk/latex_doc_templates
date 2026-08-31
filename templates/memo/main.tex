@@ -1,0 +1,90 @@
+% !TeX program = lualatex
+\documentclass{linearspace-memo}
+
+\LSSetup{
+  title={Engineering Decision Memo},
+  short-title={Verification Approach Decision},
+  author={Systems Engineering},
+  organization={Linear Space},
+  document-id={LS-MEM-0001},
+  revision={A},
+  status={Draft},
+  date={\today}
+}
+
+\LSMemoSetup{
+  to={Program Decision Authority},
+  from={Systems Engineering},
+  cc={Verification and Product Leads},
+  subject={Select the verification approach for the next design gate},
+  action-required={Approve the recommended combined analysis-and-test plan by [date].}
+}
+
+\LSMarkingSetup{
+  profile=uncontrolled,
+  classification=none,
+  controls={}
+}
+
+\begin{document}
+
+\LSMakeMemoHeader
+
+\section{Recommendation}
+
+Approve a combined approach: use analysis to cover the broad operating space,
+then test the boundary cases with the highest model uncertainty. This is an
+illustrative decision structure; replace every claim, owner, and date with
+project evidence.
+
+\begin{LSKeyPoint}[Decision in one sentence]
+Fund the smallest test campaign that invalidates the dominant assumptions,
+while retaining analysis for coverage that is impractical to test directly.
+\end{LSKeyPoint}
+
+\section{Why This Is the Center View}
+
+Analysis-only is fast but fragile where model-form uncertainty dominates.
+Test-only is tangible but cannot economically span every combination of
+temperature, rate, radiation, and life. The combined plan forces both methods
+to challenge one another.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Illustrative decision matrix.}
+  \begin{tabularx}{\linewidth}{@{}p{1.30in}X c c@{}}
+    \toprule
+    \textbf{Option} & \textbf{Main tradeoff} & \textbf{Coverage} & \textbf{Cost} \\
+    \midrule
+    Analysis only & Fast; depends heavily on model validity & Broad & Low \\
+    Test only & Direct evidence; sparse operating-space coverage & Narrow & High \\
+    Combined & Targets uncertainty while preserving broad coverage & Broad & Medium \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\section{Evidence Required Before Approval}
+
+\begin{enumerate}
+  \item Rank assumptions by sensitivity and uncertainty.
+  \item Map each acceptance criterion to analysis, test, inspection, or
+  demonstration evidence.
+  \item Identify test boundaries, instrumentation uncertainty, success criteria,
+  owner, schedule, and configuration baseline.
+  \item Record the residual risk and the authority accepting it.
+\end{enumerate}
+
+\section{Next Actions}
+
+\begin{tabularx}{\linewidth}{@{}X p{1.25in}p{1.0in}@{}}
+  \toprule
+  \textbf{Action} & \textbf{Owner} & \textbf{Due} \\
+  \midrule
+  Complete sensitivity ranking and evidence map & [Owner] & [Date] \\
+  Freeze the test configuration and success criteria & [Owner] & [Date] \\
+  Hold decision review and record disposition & [Owner] & [Date] \\
+  \bottomrule
+\end{tabularx}
+
+\end{document}
+

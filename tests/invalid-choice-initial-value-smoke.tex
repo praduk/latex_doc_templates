@@ -1,0 +1,10 @@
+% Expected failure: choice fields must start blank so /V, /DV, and the blank
+% normal appearance cannot silently disagree. No real agreement data appears.
+\documentclass{article}
+\usepackage{linearspace-forms}
+\begin{document}
+\begin{LSForm}
+  \LSFormChoiceMenu[default=One]
+    {synthetic_bad_choice}{Synthetic invalid choice}{One,Two}
+\end{LSForm}
+\end{document}

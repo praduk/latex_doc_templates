@@ -1,0 +1,9 @@
+% Expected failure in shipout/before: the first page omitted required notices.
+\documentclass[letterpaper]{article}
+\usepackage{linearspace-markings}
+\LSMarkingSetup{profile=corporate,classification=none,controls={proprietary}}
+\begin{document}
+Synthetic page intentionally omitting \string\LSMarkingNotices.
+\newpage
+This second page must never ship.
+\end{document}

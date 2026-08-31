@@ -1,0 +1,11 @@
+% Expected failure before shipout: Statement A needs the DoD office's decision.
+\documentclass[letterpaper]{article}
+\usepackage{linearspace-markings}
+\LSMarkingSetup{
+  profile=uncontrolled,
+  classification=none,
+  controls={},
+  distribution-code=A,
+  public-release-approved=true
+}
+\begin{document}Synthetic test.\end{document}

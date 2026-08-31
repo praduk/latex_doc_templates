@@ -1,0 +1,100 @@
+% !TeX program = lualatex
+% SYNTHETIC VISUAL DEMONSTRATION ONLY. NO CONTROLLED OR CLASSIFIED INFORMATION.
+\documentclass[aspectratio=169,professionalfonts]{beamer}
+\usetheme{LinearSpace}
+
+\LSSetup{
+  title={Synthetic CONFIDENTIAL Preview},
+  subtitle={NO CONTROLLED OR CLASSIFIED INFORMATION},
+  short-title={Synthetic CONFIDENTIAL Preview},
+  author={Linear Space Template Demonstration},
+  organization={Linear Space},
+  document-id={LS-DEMO-CONFIDENTIAL},
+  revision={A},
+  status={Synthetic Demo},
+  date={August 31, 2026}
+}
+\LSMarkingSetup{
+  profile=classified-general,
+  classification=confidential,
+  controls={proprietary,cui},
+  proprietary-mode=multi-owner,
+  operator-confirms-controlled-environment=true,
+  operator-confirms-classified-environment=true,
+  banner-text={CONFIDENTIAL//CUI},
+  controlled-by={Fictional Demo Control Authority},
+  cui-categories={Synthetic Demo Category},
+  control-poc={demo-security@example.invalid},
+  authority-type=derivative,
+  classified-by={Fictional Demo Derivative Classifier},
+  derived-from={Fictional Demo Security Classification Guide},
+  declassify-on={31 AUG 2036}
+}
+\LSDeclareProprietaryOwner{Synthetic Owner Alpha}
+  {Fictional Alpha legend; reviewed authorization would be required.}
+\LSDeclareProprietaryOwner{Synthetic Owner Beta}
+  {Fictional Beta legend; reviewed authorization would be required.}
+\LSEnableSyntheticDemoWatermark
+\LSSetTitleBackground{red-blue-galactic-core}
+\LSTitleBackgroundCredit{\LSU{Owner-supplied synthetic demo background.}}
+
+\title{\texorpdfstring{\LSC{\LSTitle}}{\LSTitle}}
+\subtitle{\texorpdfstring{\LSU{\LSSubtitle}}{\LSSubtitle}}
+\author{\texorpdfstring{\LSU{\LSAuthor}}{\LSAuthor}}
+\date{\texorpdfstring{\LSU{\LSDate}}{\LSDate}}
+
+\begin{document}
+\begin{frame}\titlepage\end{frame}
+
+\begin{LSSlideMarking}[CUI]{cui}
+\begin{frame}{\texorpdfstring{\LSCUI{CUI-only slide-marking preview}}{CUI-only slide-marking preview}}
+  \vfill
+  {\fontsize{18}{23}\selectfont
+    \LSCUI{Synthetic placeholder text demonstrates the validated CUI-only
+    banner and CUI portion-mark typography. No controlled information is
+    present.}\par}
+  \vspace{0.24in}
+  \begin{block}{\LSCUI{One-slide scope}}
+    \LSCUI{The purple CUI banner applies to this frame only. The document's
+    inclusive \textbf{CONFIDENTIAL//CUI} banner remains unchanged.}
+  \end{block}
+  \vfill
+  {\fontsize{15}{19}\selectfont\bfseries\color{LSDeckLime}
+   \LSU{SYNTHETIC DEMONSTRATION --- NOT CLASSIFIED}\par}
+\end{frame}
+\end{LSSlideMarking}
+
+\begin{LSSlideMarking}{unclassified}
+\begin{frame}{\texorpdfstring{\LSU{UNCLASSIFIED slide-marking preview}}{UNCLASSIFIED slide-marking preview}}
+  \vfill
+  {\fontsize{18}{23}\selectfont
+    \LSU{Synthetic placeholder text demonstrates an explicitly unclassified
+    slide inside the marked demo deck. No classified or controlled information
+    is present.}\par}
+  \vspace{0.24in}
+  \begin{block}{\LSU{Automatic reset}}
+    \RaggedRight \LSU{The dark-green \textbf{UNCLASSIFIED} band is limited to this
+    frame; the following slide automatically returns to the inclusive document
+    banner.}\par
+  \end{block}
+  \vfill
+  {\fontsize{15}{19}\selectfont\bfseries\color{LSDeckLime}
+   \LSU{SYNTHETIC DEMONSTRATION --- NOT CLASSIFIED}\par}
+\end{frame}
+\end{LSSlideMarking}
+
+\begin{frame}{\texorpdfstring{\LSC{CONFIDENTIAL portion-mark preview}}{CONFIDENTIAL portion-mark preview}}
+  \vfill
+  {\fontsize{18}{23}\selectfont
+    \LSC{Synthetic placeholder text demonstrates the CONFIDENTIAL portion mark
+    and restored inclusive CONFIDENTIAL//CUI banner. It is not classified.}\par}
+  \vspace{0.24in}
+  \begin{alertblock}{\LSC{Not classification authority}}
+    \LSC{All owners, authority fields, categories, contacts, and dates in this
+    deck are fictional. Never derive a real marking or handling decision from it.}
+  \end{alertblock}
+  \vfill
+  {\fontsize{15}{19}\selectfont\bfseries\color{LSDeckLime}
+   \LSU{SYNTHETIC DEMONSTRATION --- NOT CLASSIFIED}\par}
+\end{frame}
+\end{document}

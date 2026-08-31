@@ -1,0 +1,63 @@
+% Synthetic layout test. Run with LuaLaTeX -draftmode only.
+% This file contains no controlled or classified information.
+\documentclass{linearspace-legal}
+
+\LSSetup{
+  title={Synthetic Marking Layout Test},
+  short-title={Synthetic Layout Test},
+  author={Linear Space Test Suite},
+  organization={Linear Space},
+  document-id={LS-TEST-0001},
+  revision={A},
+  status={Synthetic Test Only},
+  date={30 August 2026}
+}
+
+\LSLegalSetup{
+  party-a={Synthetic First Party},
+  party-b={Synthetic Second Party},
+  effective-date={30 August 2026},
+  governing-law={Synthetic Jurisdiction}
+}
+
+\LSMarkingSetup{
+  profile=classified-dod,
+  classification=top-secret,
+  controls={proprietary,cui,ear,itar},
+  operator-confirms-controlled-environment=true,
+  operator-confirms-classified-environment=true,
+  banner-text={TOP SECRET},
+  controlled-by={Synthetic DoD Component},
+  controlled-office={Synthetic Program Office},
+  cui-categories={CTI},
+  control-poc={test@example.invalid},
+  export-jurisdiction={EAR and ITAR},
+  export-classification={Synthetic reviewed classifications},
+  export-authorization={Synthetic validation hold},
+  export-destination={Not authorized for release},
+  export-end-user={Not authorized for release},
+  export-end-use={Synthetic validation only},
+  export-contact={test@example.invalid},
+  export-review-date={30 AUG 2026},
+  authority-type=derivative,
+  classified-by={Synthetic Test Classifier},
+  derived-from={Synthetic Test Security Classification Guide},
+  declassify-on={30 AUG 2036},
+  classified-cui-source={the synthetic test classification guide},
+  classified-cui-contact={test@example.invalid},
+  distribution-code=E,
+  distribution-categories={Export Controlled, Proprietary Business Information},
+  distribution-date={30 AUG 2026},
+  distribution-office={Synthetic Program Office},
+  operator-confirms-dod-distribution-authority=true,
+  dod-export-controlled-technical-information=true
+}
+
+\begin{document}
+\LSMakeLegalTitle
+\ExplSyntaxOn
+\int_compare:nNnF {\g_ls_shipout_page_int} = {2}
+  {\PackageError{linearspace-test}{Full-combination~legal~cover~and~required~release-notice~page~count~regression}{}}
+\ExplSyntaxOff
+Synthetic layout-test body; not controlled or classified.
+\end{document}

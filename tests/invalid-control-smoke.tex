@@ -1,0 +1,12 @@
+% Expected to fail before a page is shipped.
+\documentclass{linearspace-memo}
+
+\LSMarkingSetup{
+  profile=corporate,
+  classification=none,
+  controls={misspelled-control}
+}
+
+\begin{document}
+This content must never render.
+\end{document}

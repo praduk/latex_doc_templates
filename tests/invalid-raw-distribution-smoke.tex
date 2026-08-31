@@ -1,0 +1,10 @@
+% Expected failure before shipout: official statements use structured fields only.
+\documentclass[letterpaper]{article}
+\usepackage{linearspace-markings}
+\LSMarkingSetup{
+  profile=uncontrolled,
+  classification=none,
+  controls={},
+  distribution-statement={Distribution Statement A. Unreviewed free text.}
+}
+\begin{document}Synthetic test.\end{document}

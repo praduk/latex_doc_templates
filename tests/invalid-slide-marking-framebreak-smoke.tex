@@ -1,0 +1,38 @@
+% Expected failure: a slide-local downgrade may not span physical slides.
+% This file contains no controlled or classified information.
+\documentclass[aspectratio=169,professionalfonts]{beamer}
+\usetheme{LinearSpace}
+\LSSetup{
+  title={Synthetic Slide-Marking Framebreak Test},
+  short-title={Framebreak Test},
+  author={Linear Space Test Suite},
+  organization={Linear Space},
+  document-id={LS-TEST-BAD-FRAMEBREAK},
+  revision={A},
+  status={Synthetic Test Only},
+  date={August 31, 2026}
+}
+\LSMarkingSetup{
+  profile=classified-general,
+  classification=confidential,
+  controls={},
+  operator-confirms-classified-environment=true,
+  banner-text={CONFIDENTIAL},
+  authority-type=derivative,
+  classified-by={Synthetic Test Classifier},
+  derived-from={Synthetic Test Security Classification Guide},
+  declassify-on={31 AUG 2036}
+}
+\title{\LSTitle}
+\author{\LSAuthor}
+\date{\LSDate}
+\begin{document}
+\begin{frame}\titlepage\end{frame}
+\begin{LSSlideMarking}{unclassified}
+  \begin{frame}[allowframebreaks]{This must fail before a downgraded page ships}
+    \LSU{Synthetic first page.}
+    \framebreak
+    \LSU{Synthetic second page.}
+  \end{frame}
+\end{LSSlideMarking}
+\end{document}

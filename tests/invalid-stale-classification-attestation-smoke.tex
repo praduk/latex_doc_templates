@@ -1,0 +1,12 @@
+% Expected failure: an unclassified profile cannot retain a classified-system attestation.
+\documentclass[letterpaper]{article}
+\usepackage{linearspace-markings}
+\LSMarkingSetup{
+  profile=uncontrolled,
+  classification=none,
+  controls={},
+  operator-confirms-classified-environment=true
+}
+\begin{document}
+Synthetic expected-failure text.
+\end{document}

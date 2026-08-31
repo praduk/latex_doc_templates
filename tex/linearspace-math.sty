@@ -1,0 +1,118 @@
+\NeedsTeXFormat{LaTeX2e}[2022-11-01]
+\ProvidesPackage{linearspace-math}[2026/08/30 Engineering mathematics and plots]
+
+\RequirePackage{mathtools}
+\RequirePackage{amsthm}
+\RequirePackage{unicode-math}
+\IfFontExistsTF{TeX Gyre Pagella Math}
+  {\setmathfont{TeX Gyre Pagella Math}}
+  {\setmathfont{Latin Modern Math}}
+
+\RequirePackage{siunitx}
+\RequirePackage{tikz}
+\RequirePackage{pgfplots}
+\RequirePackage{xparse}
+
+\usetikzlibrary{
+  arrows.meta,
+  backgrounds,
+  calc,
+  decorations.pathmorphing,
+  fit,
+  intersections,
+  matrix,
+  patterns,
+  positioning,
+  quotes,
+  shapes.geometric
+}
+\pgfplotsset{compat=1.18}
+\pgfplotscreateplotcyclelist{linearspace}{%
+  {LSBlue,very thick},%
+  {LSTeal,very thick,dashed},%
+  {LSAmber,very thick,dash dot},%
+  {LSCyan,very thick,densely dotted},%
+  {LSPurple,very thick}%
+}
+\pgfplotsset{
+  linearspace/.style={
+    cycle list name=linearspace,
+    axis line style={draw=LSSlate},
+    tick style={draw=LSSlate},
+    tick label style={font=\small,color=LSInk},
+    label style={font=\small,color=LSInk},
+    title style={font=\bfseries\small,color=LSInk},
+    grid=major,
+    grid style={draw=LSRule!65,line width=0.25pt},
+    legend style={draw=none,fill=none,font=\small},
+  }
+}
+
+\sisetup{
+  detect-all,
+  group-separator={,},
+  group-minimum-digits=4,
+  per-mode=symbol,
+  range-phrase={--},
+  range-units=single,
+  uncertainty-mode=separate,
+}
+
+% Collision-resistant mathematical shorthand.
+\newcommand{\Rset}{\mathbb{R}}
+\newcommand{\Cset}{\mathbb{C}}
+\newcommand{\Nset}{\mathbb{N}}
+\newcommand{\Zset}{\mathbb{Z}}
+\newcommand{\Qset}{\mathbb{Q}}
+\newcommand{\Hset}{\mathbb{H}}
+\newcommand{\Identity}{\mathbb{I}}
+\newcommand{\transpose}{\mathsf{T}}
+
+\DeclareMathOperator{\rank}{rank}
+\DeclareMathOperator{\trace}{tr}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\Cov}{Cov}
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\SO}{SO}
+\DeclareMathOperator{\SE}{SE}
+\DeclareMathOperator{\GL}{GL}
+
+\NewDocumentCommand{\vect}{m}{\symbf{#1}}
+\NewDocumentCommand{\mat}{m}{\symbf{#1}}
+\NewDocumentCommand{\unitvect}{m}{\symbf{\hat{#1}}}
+\NewDocumentCommand{\norm}{m}{\left\lVert #1 \right\rVert}
+\NewDocumentCommand{\abs}{m}{\left\lvert #1 \right\rvert}
+\NewDocumentCommand{\inner}{m m}{\left\langle #1,#2 \right\rangle}
+\NewDocumentCommand{\expect}{m}{\mathbb{E}\!\left[#1\right]}
+\NewDocumentCommand{\prob}{m}{\mathbb{P}\!\left(#1\right)}
+\NewDocumentCommand{\odv}{o m m}{%
+  \IfNoValueTF{#1}
+    {\frac{\mathrm{d} #2}{\mathrm{d} #3}}
+    {\frac{\mathrm{d}^{#1} #2}{\mathrm{d} #3^{#1}}}%
+}
+\NewDocumentCommand{\pdv}{o m m}{%
+  \IfNoValueTF{#1}
+    {\frac{\partial #2}{\partial #3}}
+    {\frac{\partial^{#1} #2}{\partial #3^{#1}}}%
+}
+\NewDocumentCommand{\skewmat}{m}{\left[#1\right]_{\!\times}}
+\NewDocumentCommand{\evalat}{m m}{\left.#1\right|_{#2}}
+
+% Beamer already owns the standard theorem environments. Document classes do
+% not, so define the full engineering set only outside Beamer.
+\makeatletter
+\@ifclassloaded{beamer}{%
+  \@ifundefined{requirement}{\newtheorem{requirement}{Requirement}}{}%
+}{%
+  \newtheorem{theorem}{Theorem}[section]
+  \newtheorem{lemma}[theorem]{Lemma}
+  \newtheorem{proposition}[theorem]{Proposition}
+  \theoremstyle{definition}
+  \newtheorem{definition}[theorem]{Definition}
+  \newtheorem{requirement}{Requirement}[section]
+  \theoremstyle{remark}
+  \newtheorem*{remark}{Remark}
+}
+\makeatother
+
+\endinput

@@ -1,0 +1,6 @@
+% Expected failure before shipout: alternate CUI-only banners are uppercase.
+\documentclass[letterpaper]{article}
+\usepackage{linearspace-markings}
+\LSMarkingSetup{profile=cui-general,classification=none,controls={cui}}
+\LSValidateCUIOnlyBanner{Cui}
+\begin{document}This content must never render.\end{document}

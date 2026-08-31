@@ -1,0 +1,19 @@
+% Expected failure: title overlays accept opacity values only from zero to one.
+% This file contains no controlled, proprietary, or classified information.
+\documentclass[aspectratio=169,professionalfonts]{beamer}
+\usetheme{LinearSpace}
+\LSSetup{
+  title={Synthetic Invalid Overlay Test},
+  short-title={Invalid Overlay Test},
+  author={Linear Space Test Suite},
+  organization={Linear Space},
+  document-id={LS-TEST-BAD-OVERLAY},
+  revision={A},
+  status={Synthetic Test Only},
+  date={August 31, 2026}
+}
+\LSMarkingSetup{profile=uncontrolled,classification=none,controls={}}
+\LSTitleBackgroundOverlay{1.01}
+\begin{document}
+\begin{frame}\titlepage\end{frame}
+\end{document}

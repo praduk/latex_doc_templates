@@ -1,0 +1,25 @@
+% Harmless smoke test: no regulated or classified content.
+\documentclass{linearspace-report}
+
+\LSSetup{
+  title={Corporate Marking Smoke Test},
+  short-title={Corporate Marking Smoke Test},
+  author={Template Test},
+  document-id={LS-TEST-0001},
+  revision={A},
+  status={Test},
+  date={2026-08-30}
+}
+
+\LSMarkingSetup{
+  profile=corporate,
+  classification=none,
+  controls={proprietary}
+}
+
+\begin{document}
+\LSMakeReportTitle
+\chapter{Synthetic content}
+This file verifies only the corporate banner and title-page legend. It contains
+no project, CUI, export-controlled, or classified information.
+\end{document}

@@ -1,0 +1,31 @@
+% Expected failure: the unclassified DoD export-controlled CTI rule is B--E.
+\documentclass[letterpaper]{article}
+\usepackage{linearspace-markings}
+\LSMarkingSetup{
+  profile=cui-dod,
+  classification=none,
+  controls={cui,ear},
+  operator-confirms-controlled-environment=true,
+  banner-text={CUI},
+  controlled-by={Synthetic DoD Component},
+  controlled-office={Synthetic Program Office},
+  cui-categories={CTI},
+  control-poc={test@example.invalid},
+  export-jurisdiction={EAR},
+  export-classification={Synthetic reviewed classification},
+  export-authorization={Synthetic validation hold},
+  export-destination={Not authorized for release},
+  export-end-user={Not authorized for release},
+  export-end-use={Synthetic validation only},
+  export-contact={test@example.invalid},
+  export-review-date={30 AUG 2026},
+  distribution-code=F,
+  distribution-date={30 AUG 2026},
+  distribution-office={Synthetic Program Office},
+  operator-confirms-dod-distribution-authority=true,
+  dod-export-controlled-technical-information=true
+}
+\begin{document}
+\LSMarkingNotices
+Synthetic expected-failure text; not controlled data.
+\end{document}

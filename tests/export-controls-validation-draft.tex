@@ -1,0 +1,22 @@
+% Synthetic marking-system test. Run with LuaLaTeX -draftmode only.
+% This file contains no controlled or classified information.
+\documentclass[letterpaper]{article}
+\usepackage{linearspace-markings}
+\LSMarkingSetup{
+  profile=corporate,
+  classification=none,
+  controls={ear,itar},
+  operator-confirms-controlled-environment=true,
+  export-jurisdiction={EAR and ITAR},
+  export-classification={Synthetic reviewed classifications},
+  export-authorization={Synthetic validation hold},
+  export-destination={Not authorized for release},
+  export-end-user={Not authorized for release},
+  export-end-use={Synthetic validation only},
+  export-contact={test@example.invalid},
+  export-review-date={30 AUG 2026}
+}
+\begin{document}
+\LSMarkingNotices
+Synthetic dual-jurisdiction renderer test; not actual controlled data.
+\end{document}

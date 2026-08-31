@@ -1,0 +1,279 @@
+% !TeX program = lualatex
+\documentclass{linearspace-legal}
+
+\LSSetup{
+  title={Agreement Template},
+  short-title={Agreement Template},
+  author={Linear Space Legal},
+  organization={Linear Space},
+  document-id={LS-LEG-0001},
+  revision={A},
+  status={Draft --- Not for Signature},
+  date={\today}
+}
+
+% These short role names appear in headings and running text. The fillable
+% Document Details fields below collect the parties' complete legal names.
+\LSLegalSetup{
+  party-a={First Party},
+  party-b={Second Party},
+  effective-date={See Document Details},
+  governing-law={See Governing Law field}
+}
+
+\LSMarkingSetup{
+  profile=uncontrolled,
+  classification=none,
+  controls={}
+}
+
+\begin{document}
+
+% Uncomment only if a court, agency, or filing convention requires line numbers.
+% \LSEnableLineNumbers
+
+\LSMakeLegalTitle
+
+\tableofcontents
+\clearpage
+
+% All PDF widgets belong to this one AcroForm. Keep every LSForm field inside
+% this environment, and give each field a unique, stable ASCII name.
+\begin{LSForm}
+
+\phantomsection
+\addcontentsline{toc}{section}{Document Details}
+\begin{center}
+  {\bfseries\large DOCUMENT DETAILS\par}
+\end{center}
+
+Complete these fields before execution. They are document-preparation controls,
+not a substitute for legal review or a certificate-based digital-signature
+service.
+
+\noindent\begin{minipage}[t]{0.48\linewidth}
+  \setlength{\parindent}{0pt}
+  \LSFormTextField[required,maxlen=120]
+    {agreement_party_a_legal_name}{First Party --- complete legal name}
+  \LSFormChoiceMenu[required]
+    {agreement_party_a_entity_type}{First Party --- entity type (select one)}
+    {Corporation,Limited liability company,Partnership,Individual,Government entity,Other}
+  \LSFormTextField[maxlen=80]
+    {agreement_party_a_formation_jurisdiction}{First Party --- formation jurisdiction}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.48\linewidth}
+  \setlength{\parindent}{0pt}
+  \LSFormTextField[required,maxlen=120]
+    {agreement_party_b_legal_name}{Second Party --- complete legal name}
+  \LSFormChoiceMenu[required]
+    {agreement_party_b_entity_type}{Second Party --- entity type (select one)}
+    {Corporation,Limited liability company,Partnership,Individual,Government entity,Other}
+  \LSFormTextField[maxlen=80]
+    {agreement_party_b_formation_jurisdiction}{Second Party --- formation jurisdiction}
+\end{minipage}
+
+\LSFormTextField[required,maxlen=40]
+  {agreement_effective_date}{Effective date}
+
+This \LSTitle{} (this \DefinedTerm{Agreement}) is made effective on the date
+entered above by and between the parties identified in the Document Details
+(each a \DefinedTerm{Party} and together the \DefinedTerm{Parties}).
+
+\section{Purpose and Scope}
+
+\begin{legalclauses}
+  \item The Parties wish to evaluate or perform the transaction, program, or
+  relationship described below (the \DefinedTerm{Purpose}).
+
+  \LSFormMultilineField[required,maxlen=1600]
+    {agreement_purpose}
+    {Purpose --- describe the transaction, program, or relationship}
+
+  \item This template is a structural starting point. Counsel must tailor the
+  substance to the transaction, governing law, contract requirements, data
+  rights, export controls, and remedies.
+\end{legalclauses}
+
+\section{Definitions}
+
+\begin{legalclauses}
+  \item \DefinedTerm{Confidential Information} has the meaning completed below.
+
+  \LSFormMultilineField[required,maxlen=2200]
+    {agreement_confidential_information_definition}
+    {Confidential Information --- define covered information, marking methods,
+     oral-disclosure confirmation, and whether discussions are covered}
+
+  \item Confidential Information does not include information the Receiving
+  Party can demonstrate by contemporaneous records:
+  \begin{legalclauses}
+    \item was lawfully known without restriction before disclosure;
+    \item becomes public without breach of this Agreement;
+    \item is received lawfully from a third party without a duty of
+    confidentiality; or
+    \item is independently developed without use of the Disclosing Party's
+    Confidential Information.
+  \end{legalclauses}
+\end{legalclauses}
+
+\section{Use and Protection}
+
+\begin{legalclauses}
+  \item The Receiving Party shall use Confidential Information solely for the
+  Purpose and shall disclose it only to the authorized representatives defined
+  below who have a need to know and are bound by appropriate obligations.
+
+  \LSFormMultilineField[maxlen=1200]
+    {agreement_authorized_representatives}
+    {Authorized representatives and required obligations}
+
+  \item The Receiving Party shall protect Confidential Information using the
+  standard of care entered below and shall promptly report the specified
+  categories of unauthorized access, use, or disclosure.
+
+  \LSFormTextField[maxlen=300]
+    {agreement_standard_of_care}{Agreed standard of care}
+  \LSFormMultilineField[maxlen=1200]
+    {agreement_incident_reporting}{Reportable events, timing, and notice method}
+
+  \item Nothing in this Agreement authorizes access to classified information,
+  CUI, technical data subject to export controls, or other regulated
+  information. Such access requires the separate governmental, contractual,
+  facility, personnel, and system authorizations that apply.
+\end{legalclauses}
+
+\section{Required Disclosure}
+
+\begin{legalclauses}
+  \item If disclosure is required by law, order, or legal process, the Receiving
+  Party shall follow the notice, cooperation, protective-order, and
+  minimum-disclosure obligations completed below, subject to applicable law.
+
+  \LSFormMultilineField[maxlen=1800]
+    {agreement_required_disclosure_procedure}
+    {Required-disclosure procedure}
+\end{legalclauses}
+
+\section{Ownership and No License}
+
+\begin{legalclauses}
+  \item Each Disclosing Party retains its rights in its Confidential
+  Information. Except as expressly stated, no license or other right is granted
+  by disclosure, implication, estoppel, or otherwise.
+
+  \item Any reviewed terms addressing feedback, residuals, reverse engineering,
+  export data, government data rights, or third-party materials are stated
+  below.
+
+  \LSFormMultilineField[maxlen=2000]
+    {agreement_special_rights_terms}{Additional ownership, license, and data-rights terms}
+\end{legalclauses}
+
+\section{Term and Disposition}
+
+\begin{legalclauses}
+  \item This Agreement begins on the Effective Date and continues for the term
+  completed below. The confidentiality and use restrictions survive as stated,
+  subject to applicable law.
+
+  \LSFormTextField[maxlen=300]{agreement_term}{Agreement term}
+  \LSFormTextField[maxlen=400]
+    {agreement_survival_period}{Survival period or terminating condition}
+
+  \item On written request or termination, the Receiving Party shall handle the
+  Confidential Information as completed below and, if required, certify
+  completion in writing.
+
+  \LSFormMultilineField[maxlen=1400]
+    {agreement_disposition_requirements}
+    {Return, destruction, archival-copy, and certification requirements}
+\end{legalclauses}
+
+\section{General Provisions}
+
+\begin{legalclauses}
+  \item \textbf{Governing Law.} This Agreement is governed by the laws entered
+  below, without regard to conflict-of-laws rules, subject to the reviewed forum,
+  venue, sovereign-immunity, or federal-law requirements.
+
+  \LSFormTextField[required,maxlen=160]
+    {agreement_governing_law}{State, federal law, or other jurisdiction}
+  \LSFormMultilineField[maxlen=1200]
+    {agreement_forum_venue_terms}{Forum, venue, immunity, and related terms}
+
+  \item \textbf{Notices.} Formal notices must be delivered to the addresses and
+  contacts in Exhibit A using the methods completed below and are effective as
+  specified there.
+
+  \LSFormTextField[maxlen=400]
+    {agreement_notice_delivery_methods}{Permitted delivery methods}
+  \LSFormTextField[maxlen=400]
+    {agreement_notice_effectiveness}{When notice becomes effective}
+
+  \item \textbf{Entire Agreement; Amendments.} The integration and amendment
+  rules are completed below.
+
+  \LSFormMultilineField[maxlen=1200]
+    {agreement_integration_amendment_terms}{Integration rule and authorized amendment method}
+
+  \item \textbf{Assignment; Waiver; Severability.} The reviewed provisions
+  appropriate to the transaction are completed below.
+
+  \LSFormMultilineField[maxlen=1600]
+    {agreement_assignment_waiver_severability_terms}
+    {Assignment, waiver, and severability terms}
+
+  \item \textbf{Counterparts and Electronic Signatures.} This Agreement may be
+  executed in counterparts and by electronic signature to the extent permitted
+  by applicable law and agreed by the Parties.
+\end{legalclauses}
+
+\clearpage
+\section{Signatures}
+
+The Parties indicate acceptance only through an authorized execution method
+after the drafting fields have been reviewed and resolved. The typed-name
+controls below are ordinary AcroForm text fields; they do not create a
+cryptographic or certificate-based digital signature.
+
+\vspace{0.25in}
+\noindent
+\LSFormSignatureBlock[0.465\textwidth]{First Party}{agreement_party_a_signature}
+\hfill
+\LSFormSignatureBlock[0.465\textwidth]{Second Party}{agreement_party_b_signature}
+
+\LSFormCheckBox{agreement_preparation_review_complete}
+  {Document-preparation review complete; submit for counsel and authorized-signatory review.}
+
+\LSExhibit{A}{Notice and Contact Information}
+
+\begingroup
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.42}
+\noindent\begin{tabular}{@{}>{\bfseries\sffamily\footnotesize}p{1.18in}p{2.44in}p{2.44in}@{}}
+  \toprule
+  & \textbf{First Party} & \textbf{Second Party} \\
+  \midrule
+  Legal name
+    & \LSFormInlineTextField[maxlen=120]{agreement_notice_party_a_legal_name}
+    & \LSFormInlineTextField[maxlen=120]{agreement_notice_party_b_legal_name} \\
+  Attention
+    & \LSFormInlineTextField[maxlen=100]{agreement_notice_party_a_attention}
+    & \LSFormInlineTextField[maxlen=100]{agreement_notice_party_b_attention} \\
+  Address
+    & \LSFormInlineMultilineField[maxlen=300]{agreement_notice_party_a_address}
+    & \LSFormInlineMultilineField[maxlen=300]{agreement_notice_party_b_address} \\
+  Email
+    & \LSFormInlineTextField[maxlen=160]{agreement_notice_party_a_email}
+    & \LSFormInlineTextField[maxlen=160]{agreement_notice_party_b_email} \\
+  Copy to
+    & \LSFormInlineTextField[maxlen=160]{agreement_notice_party_a_copy_to}
+    & \LSFormInlineTextField[maxlen=160]{agreement_notice_party_b_copy_to} \\
+  \bottomrule
+\end{tabular}
+\endgroup
+
+\end{LSForm}
+
+\end{document}

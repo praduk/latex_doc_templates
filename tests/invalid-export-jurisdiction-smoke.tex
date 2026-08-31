@@ -1,0 +1,20 @@
+% Expected failure before shipout: the jurisdiction must match the controls.
+\documentclass[letterpaper]{article}
+\usepackage{linearspace-markings}
+\LSMarkingSetup{
+  profile=corporate,
+  classification=none,
+  controls={ear},
+  operator-confirms-controlled-environment=true,
+  export-jurisdiction={ITAR},
+  export-classification={Synthetic reviewed classification},
+  export-authorization={Synthetic validation hold},
+  export-destination={Not authorized for release},
+  export-end-user={Not authorized for release},
+  export-end-use={Synthetic validation only},
+  export-contact={test@example.invalid},
+  export-review-date={30 AUG 2026}
+}
+\begin{document}
+Synthetic test.
+\end{document}

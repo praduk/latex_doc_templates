@@ -1,0 +1,276 @@
+\NeedsTeXFormat{LaTeX2e}[2022-11-01]
+\ProvidesPackage{linearspace-forms}[2026/08/30 Linear Space PDF form controls]
+
+\RequirePackage{linearspace-brand}
+\RequirePackage{xparse}
+\RequirePackage{hyperref}
+\RequirePackage{etoolbox}
+
+% These controls deliberately use hyperref's AcroForm implementation instead
+% of drawing look-alike boxes. Field names are explicit so cloned documents
+% retain stable identifiers for downstream workflows and validation.
+\ExplSyntaxOn
+\bool_new:N \g_ls_form_active_bool
+\bool_new:N \g_ls_form_used_bool
+\prop_new:N \g_ls_form_field_names_prop
+
+\msg_new:nnn {linearspace-forms} {field-outside-form}
+  {Field~'#1'~must~be~inside~the~single~LSForm~environment.}
+\msg_new:nnn {linearspace-forms} {duplicate-field}
+  {PDF~field~name~'#1'~is~already~in~use.~Every~field~name~must~be~unique.}
+\msg_new:nnn {linearspace-forms} {invalid-field-name}
+  {PDF~field~name~'#1'~is~invalid.~Use~ASCII~letters,~digits,~hyphens,~and~underscores;~begin~with~a~letter.}
+\msg_new:nnn {linearspace-forms} {nested-form}
+  {LSForm~environments~cannot~be~nested.}
+\msg_new:nnn {linearspace-forms} {second-form}
+  {Only~one~LSForm~environment~is~permitted~in~a~document.}
+\msg_new:nnnn {linearspace-forms} {choice-initial-value}
+  {Choice-menu~option~'#1'~is~not~supported.}
+  {Linear~Space~choice~menus~start~blank~so~their~stored~value~and~normal~appearance~cannot~disagree.~Remove~default/value~and~let~the~user~make~an~explicit~selection.}
+
+% hyperref deliberately leaves text and choice appearances to the viewer. A
+% self-contained form must instead provide normal-appearance XObjects and keep
+% /NeedAppearances false. These vector appearances are engine-independent via
+% the LaTeX3 PDF object interface and scale to each widget rectangle.
+\pdf_object_new:n {ls-form-text-appearance}
+\pdf_object_write:nnn {ls-form-text-appearance} {stream}
+  {
+    {/Type~/XObject~/Subtype~/Form~/FormType~1~/BBox[0~0~100~20]~/Resources<<>>}
+    {q~0.965~0.977~1~rg~0~0~100~20~re~f~0.137~0.365~1~RG~0.18~w~0.1~0.1~99.8~19.8~re~S~Q}
+  }
+\pdf_object_new:n {ls-form-choice-appearance}
+\pdf_object_write:nnn {ls-form-choice-appearance} {stream}
+  {
+    {/Type~/XObject~/Subtype~/Form~/FormType~1~/BBox[0~0~100~20]~/Resources<<>>}
+    {q~0.965~0.977~1~rg~0~0~100~20~re~f~0.93~0.95~0.99~rg~84~0~16~20~re~f~0.137~0.365~1~RG~0.3~w~0.15~0.15~99.7~19.7~re~S~84~0~m~84~20~l~S~0.09~0.125~0.2~rg~88~12~m~96~12~l~92~7~l~h~f~Q}
+  }
+\pdf_object_new:n {ls-form-checkbox-off-appearance}
+\pdf_object_write:nnn {ls-form-checkbox-off-appearance} {stream}
+  {
+    {/Type~/XObject~/Subtype~/Form~/FormType~1~/BBox[0~0~20~20]~/Resources<<>>}
+    {q~0.965~0.977~1~rg~0~0~20~20~re~f~0.137~0.365~1~RG~0.8~w~0.4~0.4~19.2~19.2~re~S~Q}
+  }
+\pdf_object_new:n {ls-form-checkbox-yes-appearance}
+\pdf_object_write:nnn {ls-form-checkbox-yes-appearance} {stream}
+  {
+    {/Type~/XObject~/Subtype~/Form~/FormType~1~/BBox[0~0~20~20]~/Resources<<>>}
+    {q~0.965~0.977~1~rg~0~0~20~20~re~f~0.137~0.365~1~RG~0.8~w~0.4~0.4~19.2~19.2~re~S~2.2~w~3.5~10~m~8~5.5~l~16.5~15~l~S~Q}
+  }
+\cs_new:Npn \LSFormTextAppearanceRef
+  {\pdf_object_ref:n {ls-form-text-appearance}}
+\cs_new:Npn \LSFormChoiceAppearanceRef
+  {\pdf_object_ref:n {ls-form-choice-appearance}}
+\cs_new:Npn \LSFormCheckboxOffAppearanceRef
+  {\pdf_object_ref:n {ls-form-checkbox-off-appearance}}
+\cs_new:Npn \LSFormCheckboxYesAppearanceRef
+  {\pdf_object_ref:n {ls-form-checkbox-yes-appearance}}
+\ExplSyntaxOff
+
+\makeatletter
+\patchcmd{\PDFForm@Text}
+  {\Fld@additionalactions}
+  {/AP<</N \LSFormTextAppearanceRef>>\Fld@additionalactions}
+  {}
+  {\PackageError{linearspace-forms}{Could not install text-field appearances}
+     {The installed hyperref backend is incompatible with linearspace-forms.}}
+\patchcmd{\PDFForm@List}
+  {\Fld@additionalactions}
+  {/AP<</N \LSFormChoiceAppearanceRef>>\Fld@additionalactions}
+  {}
+  {\PackageError{linearspace-forms}{Could not install choice-field appearances}
+     {The installed hyperref backend is incompatible with linearspace-forms.}}
+\patchcmd{\PDFForm@Check}
+  {/AP<< /N <</Yes<<>>>> >>}
+  {/AP<</N<</Off \LSFormCheckboxOffAppearanceRef/Yes \LSFormCheckboxYesAppearanceRef>>>>}
+  {}
+  {\PackageError{linearspace-forms}{Could not install checkbox appearances}
+     {The installed hyperref backend is incompatible with linearspace-forms.}}
+\makeatother
+
+\ExplSyntaxOn
+
+\cs_generate_variant:Nn \regex_match:nnTF {nVTF}
+\cs_generate_variant:Nn \prop_if_in:NnTF {NVTF}
+\cs_generate_variant:Nn \prop_gput:Nnn {NVn}
+
+\cs_new_protected:Npn \ls_form_register_field:n #1
+  {
+    \bool_if:NF \g_ls_form_active_bool
+      {\msg_fatal:nnn {linearspace-forms} {field-outside-form} {#1}}
+    % Convert category-code-sensitive characters such as '_' to ordinary PDF
+    % string characters before validation and duplicate tracking.
+    \tl_set:Nx \l_tmpa_tl {\tl_to_str:n {#1}}
+    \regex_match:nVTF {\A[A-Za-z][-A-Za-z0-9_]*\Z} \l_tmpa_tl
+      { }
+      {\msg_fatal:nnx {linearspace-forms} {invalid-field-name} {\tl_use:N \l_tmpa_tl}}
+    \prop_if_in:NVTF \g_ls_form_field_names_prop \l_tmpa_tl
+      {\msg_fatal:nnx {linearspace-forms} {duplicate-field} {\tl_use:N \l_tmpa_tl}}
+      {\prop_gput:NVn \g_ls_form_field_names_prop \l_tmpa_tl {used}}
+  }
+
+\cs_new_protected:Npn \ls_form_reject_choice_initial:n #1
+  {
+    \tl_set:Nx \l_tmpa_tl
+      {\tl_lower_case:n {\tl_to_str:n {#1}}}
+    \regex_match:nVTF
+      {(\A|,)\s*(default|value)\s*=}
+      \l_tmpa_tl
+      {\msg_fatal:nnn {linearspace-forms} {choice-initial-value}
+        {default/value}}
+      {}
+  }
+
+\cs_new_protected:Npn \ls_form_label:n #1
+  {
+    \par\noindent
+    {\sffamily\bfseries\footnotesize\color{LSInk}#1\par}
+    \nobreak\vspace{0.12em}\noindent
+  }
+
+\cs_new_protected:Npn \ls_form_text_widget:nnnn #1#2#3#4
+  {
+    \ls_form_register_field:n {#1}
+    \TextField[
+      width=\linewidth,
+      height=#3,
+      charsize=10pt,
+      borderwidth=0.8,
+      borderstyle=S,
+      bordercolor={0.137~0.365~1},
+      backgroundcolor={0.965~0.977~1},
+      color={0.090~0.125~0.200},
+      #4,
+      name={\tl_to_str:n {#1}},
+      altname={#2}
+    ]{}
+  }
+
+\cs_new_protected:Npn \ls_form_choice_widget:nnnn #1#2#3#4
+  {
+    \ls_form_register_field:n {#1}
+    \ChoiceMenu[
+      combo,
+      popdown,
+      width=\linewidth,
+      height=1.70em,
+      charsize=10pt,
+      borderwidth=0.8,
+      borderstyle=S,
+      bordercolor={0.137~0.365~1},
+      backgroundcolor={0.965~0.977~1},
+      color={0.090~0.125~0.200},
+      #4,
+      name={\tl_to_str:n {#1}},
+      altname={#2}
+    ]{}{#3}
+  }
+
+\NewDocumentEnvironment{LSForm}{}
+  {
+    \bool_if:NT \g_ls_form_active_bool
+      {\msg_fatal:nn {linearspace-forms} {nested-form}}
+    \bool_if:NT \g_ls_form_used_bool
+      {\msg_fatal:nn {linearspace-forms} {second-form}}
+    \bool_gset_true:N \g_ls_form_used_bool
+    \bool_gset_true:N \g_ls_form_active_bool
+    \begin{Form}[NeedAppearances=false]
+  }
+  {
+    \end{Form}
+    \bool_gset_false:N \g_ls_form_active_bool
+  }
+
+% Single-line field with a printed label.
+% Signature: \LSFormTextField[hyperref field options]{field-name}{label}
+\NewDocumentCommand{\LSFormTextField}{O{} m m}
+  {
+    \par\noindent\begin{minipage}{\linewidth}
+      \ls_form_label:n {#3}
+      \ls_form_text_widget:nnnn {#2} {#3} {1.70em} {#1}
+    \end{minipage}
+    \par\smallskip
+  }
+
+% Compact single-line field for table cells and already-labelled layouts.
+% Signature: \LSFormInlineTextField[hyperref field options]{field-name}
+\NewDocumentCommand{\LSFormInlineTextField}{O{} m}
+  {\ls_form_text_widget:nnnn {#2} {\tl_to_str:n {#2}} {1.70em} {#1}}
+
+% Multiline field with a printed label.
+% Signature: \LSFormMultilineField[hyperref field options]{field-name}{label}
+\NewDocumentCommand{\LSFormMultilineField}{O{} m m}
+  {
+    \par\noindent\begin{minipage}{\linewidth}
+      \ls_form_label:n {#3}
+      \ls_form_text_widget:nnnn {#2} {#3} {0.82in} {#1,multiline}
+    \end{minipage}
+    \par\smallskip
+  }
+
+% Compact multiline field for table cells and custom layouts.
+% Signature: \LSFormInlineMultilineField[hyperref field options]{field-name}
+\NewDocumentCommand{\LSFormInlineMultilineField}{O{} m}
+  {\ls_form_text_widget:nnnn {#2} {\tl_to_str:n {#2}} {0.62in} {#1,multiline}}
+
+% Checkbox with its descriptive label to the right.
+% Signature: \LSFormCheckBox[hyperref field options]{field-name}{label}
+\NewDocumentCommand{\LSFormCheckBox}{O{} m m}
+  {
+    \ls_form_register_field:n {#2}
+    \par\noindent
+    \CheckBox[
+      width=1.12em,
+      height=1.12em,
+      borderwidth=0.8,
+      borderstyle=S,
+      bordercolor={0.137~0.365~1},
+      backgroundcolor={0.965~0.977~1},
+      color={0.090~0.125~0.200},
+      #1,
+      name={\tl_to_str:n {#2}},
+      altname={#3}
+    ]{}\hspace{0.48em}{\sffamily\small #3}
+    \par\smallskip
+  }
+
+% Pop-down choice field. Choices follow hyperref syntax: Display=export value.
+% Signature: \LSFormChoiceMenu[hyperref field options]{field-name}{label}{choices}
+\NewDocumentCommand{\LSFormChoiceMenu}{O{} m m m}
+  {
+    \ls_form_reject_choice_initial:n {#1}
+    \par\noindent\begin{minipage}{\linewidth}
+      \ls_form_label:n {#3}
+      \ls_form_choice_widget:nnnn {#2} {#3} {#4} {#1}
+    \end{minipage}
+    \par\smallskip
+  }
+
+% A combined handwritten/typed execution block. The visible line is for ink;
+% the typed-name control is an ordinary text field, not a certificate-backed
+% digital-signature field.
+% Signature: \LSFormSignatureBlock[width]{party-label}{field-prefix}
+\NewDocumentCommand{\LSFormSignatureBlock}{O{0.46\textwidth} m m}
+  {
+    \begin{minipage}[t]{#1}
+      \setlength{\parindent}{0pt}
+      \raggedright
+      {\sffamily\bfseries\color{LSInk}#2\par}
+      \vspace{0.18em}
+      {\sffamily\fontsize{7.5}{9.2}\selectfont\color{LSSlate}
+       Use~the~line~for~a~handwritten~signature,~or~complete~the~typed-name~field~if~that~method~is~accepted.~The~typed-name~field~is~not~a~certificate-based~digital~signature.\par}
+      \vspace{0.27in}
+      \rule{\linewidth}{0.55pt}\par
+      {\sffamily\fontsize{7.5}{9}\selectfont\color{LSSlate}
+       Handwritten~signature\par}
+      \vspace{0.18em}
+      \LSFormChoiceMenu[required]
+        {#3_signing_method}{Signing~method}
+        {Handwritten,Typed~name}
+      \LSFormTextField{#3_typed_name}{Typed~legal~name}
+      \LSFormTextField{#3_title}{Title~or~capacity}
+      \LSFormTextField{#3_date}{Date~signed}
+    \end{minipage}
+  }
+\ExplSyntaxOff
+
+\endinput

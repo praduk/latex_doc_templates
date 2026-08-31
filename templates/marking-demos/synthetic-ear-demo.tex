@@ -1,0 +1,61 @@
+% !TeX program = lualatex
+% SYNTHETIC VISUAL DEMONSTRATION ONLY. NO CONTROLLED OR CLASSIFIED INFORMATION.
+\documentclass[aspectratio=169,professionalfonts]{beamer}
+\usetheme{LinearSpace}
+
+\LSSetup{
+  title={Synthetic EAR Marking Demo},
+  subtitle={NO CONTROLLED OR CLASSIFIED INFORMATION},
+  short-title={Synthetic EAR Demo},
+  author={Linear Space Template Demonstration},
+  organization={Linear Space},
+  document-id={LS-DEMO-EAR},
+  revision={A},
+  status={Synthetic Demo},
+  date={August 31, 2026}
+}
+\LSMarkingSetup{
+  profile=corporate,
+  classification=none,
+  controls={proprietary,ear},
+  operator-confirms-controlled-environment=true,
+  export-jurisdiction={EAR},
+  export-classification={Synthetic reviewed classification},
+  export-authorization={Synthetic demonstration hold --- no release},
+  export-destination={Not authorized for release},
+  export-end-user={Not authorized for release},
+  export-end-use={Template visualization only},
+  export-contact={demo@example.invalid},
+  export-review-date={31 AUG 2026},
+  custom-notice={SYNTHETIC DEMONSTRATION ONLY. NO CONTROLLED OR CLASSIFIED
+    INFORMATION. EAR is an export-control jurisdiction, not a security
+    classification or universal page banner.}
+}
+\LSEnableSyntheticDemoWatermark
+\LSSetTitleBackground{red-blue-galactic-core}
+\LSTitleBackgroundCredit{Owner-supplied synthetic demo background.}
+
+\title{\LSTitle}
+\subtitle{\LSSubtitle}
+\author{\LSAuthor}
+\date{\LSDate}
+
+\begin{document}
+\begin{frame}\titlepage\end{frame}
+
+\begin{frame}{\texorpdfstring{\LSU{EAR decisions require reviewed metadata}}{EAR decisions require reviewed metadata}}
+  \vfill
+  {\fontsize{18}{23}\selectfont
+    \LSU{Synthetic placeholder content demonstrates the proprietary banner and
+    the unclassified portion mark. EAR does not create a SECRET-style banner.}\par}
+  \vspace{0.24in}
+  \begin{block}{\LSU{Release gate}}
+    \LSU{Verify jurisdiction, classification, authorization, destination,
+    end-user, and end-use before any transfer. A label alone never authorizes
+    release.}
+  \end{block}
+  \vfill
+  {\fontsize{15}{19}\selectfont\bfseries\color{LSDeckLime}
+   \LSU{SYNTHETIC DEMONSTRATION --- NOT CLASSIFIED}\par}
+\end{frame}
+\end{document}

@@ -1,0 +1,12 @@
+% Expected failure before shipout: multi-owner declarations require the proprietary control.
+\documentclass[letterpaper]{article}
+\usepackage{linearspace-markings}
+\LSMarkingSetup{
+  profile=corporate,
+  classification=none,
+  controls={},
+  proprietary-mode=multi-owner
+}
+\LSDeclareProprietaryOwner{Synthetic Owner Alpha}{First synthetic reviewed legend.}
+\LSDeclareProprietaryOwner{Synthetic Owner Beta}{Second synthetic reviewed legend.}
+\begin{document}This content must never render.\end{document}

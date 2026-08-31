@@ -1,0 +1,38 @@
+% Synthetic marking-system test. Run with LuaLaTeX -draftmode only.
+% This file contains no controlled or classified information.
+\documentclass[letterpaper]{article}
+\usepackage{linearspace-markings}
+\LSMarkingSetup{
+  profile=cui-dod,
+  classification=none,
+  controls={cui,ear},
+  operator-confirms-controlled-environment=true,
+  banner-text={CUI},
+  controlled-by={Synthetic DoD Component},
+  controlled-office={Synthetic Program Office},
+  cui-categories={CTI},
+  control-poc={test@example.invalid},
+  export-jurisdiction={EAR},
+  export-classification={Synthetic reviewed classification},
+  export-authorization={Synthetic validation hold},
+  export-destination={Not authorized for release},
+  export-end-user={Not authorized for release},
+  export-end-use={Synthetic validation only},
+  export-contact={test@example.invalid},
+  export-review-date={30 AUG 2026},
+  distribution-code=C,
+  distribution-categories={Controlled Technical Information, Export Controlled},
+  distribution-date={30 AUG 2026},
+  distribution-office={Synthetic Program Office},
+  operator-confirms-dod-distribution-authority=true
+}
+\begin{document}
+\ExplSyntaxOn
+\tl_set:Nx \l_tmpa_tl {\ls_dod_export_control_warning_text:}
+\tl_if_eq:NnF \l_tmpa_tl
+  {This~document~contains~technical~data~whose~export~is~restricted~by~the~Arms~Export~Control~Act~(Section~2751~of~Title~22,~United~States~Code)~or~the~Export~Control~Reform~Act~of~2018~(Chapter~58~Sections~4801-4852~of~Title~50,~United~States~Code).~Violations~of~these~export~laws~are~subject~to~severe~criminal~penalties.~Disseminate~in~accordance~with~provisions~of~DoD~Directive~5230.25~and~DoD~Instruction~2040.02.}
+  {\PackageError{linearspace-test}{DoD~export-warning~wording~regression}{}}
+\ExplSyntaxOff
+\LSMarkingNotices
+Synthetic export-controlled-profile renderer test; not actual controlled data.
+\end{document}

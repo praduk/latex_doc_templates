@@ -1,0 +1,135 @@
+% Synthetic component-layout test. Run with LuaLaTeX -draftmode only.
+% This file contains no actual proprietary, controlled, or classified information.
+\documentclass[aspectratio=169,professionalfonts]{beamer}
+\usetheme{LinearSpace}
+
+\LSSetup{
+  title={Synthetic Presentation Component Test},
+  short-title={Component Test},
+  author={Linear Space Test Suite},
+  organization={Linear Space},
+  document-id={LS-TEST-PRES-COMP},
+  revision={A},
+  status={Synthetic Test Only},
+  date={August 31, 2026}
+}
+\LSMarkingSetup{profile=uncontrolled,classification=none,controls={}}
+
+\begin{document}
+
+\begin{LSTeamSlide}{Two-member layout}
+  \LSTeamMember[A1]{}{Synthetic A}{Role}{Synthetic body.}
+  \LSTeamMember[B2]{}{Synthetic B}{Role}{Synthetic body.}
+\end{LSTeamSlide}
+
+\begin{LSTeamSlide}[background=webb-clouds]{Three-member layout}
+  \LSTeamMember[A1]{}{Synthetic A}{Role}{Synthetic body.}
+  \LSTeamMember[B2]{}{Synthetic B}{Role}{Synthetic body.}
+  \LSTeamMember[C3]{}{Synthetic C}{Role}{Synthetic body.}
+\end{LSTeamSlide}
+
+\begin{LSTeamSlide}[
+  background=assets/backgrounds/milky-way-panorama.jpg,
+  focal-x=0.10in,
+  focal-y=-0.05in
+]{Four-member layout}
+  \LSTeamMember[A1]{}{Synthetic A}{Role}{Synthetic body.}
+  \LSTeamMember[B2]{}{Synthetic B}{Role}{Synthetic body.}
+  \LSTeamMember[C3]{}{Synthetic C}{Role}{Synthetic body.}
+  \LSTeamMember[D4]{}{Synthetic D}{Role}{Synthetic body.}
+\end{LSTeamSlide}
+
+\begin{LSMilestoneSlide}{Three-stage layout}
+  \LSMilestone[status=completed]{1}{Done}{Synthetic body.}{Q1}
+  \LSMilestone[status=in-progress]{2}{Active}{Synthetic body.}{Q2}
+  \LSMilestone[status=upcoming]{3}{Next}{Synthetic body.}{Q3}
+\end{LSMilestoneSlide}
+
+\begin{LSMilestoneSlide}{One-stage boundary layout}
+  \LSMilestone[status=in-progress]{1}{Focused gate}{Synthetic body.}{Q1}
+\end{LSMilestoneSlide}
+
+\begin{LSMilestoneSlide}{Two-stage centered layout}
+  \LSMilestone[status=completed]{1}{Concept review}{Synthetic body.}{Q1}
+  \LSMilestone{2}{Flight release}{Synthetic body.}{Q2}
+\end{LSMilestoneSlide}
+
+\begin{LSMilestoneSlide}[background=webb-clouds]{Four-stage layout}
+  \LSMilestone[status=completed]{1}{Done}{Synthetic body.}{Q1}
+  \LSMilestone[status=in-progress]{2}{Active}{Synthetic body.}{Q2}
+  \LSMilestone{3}{Next}{Synthetic body.}{Q3}
+  \LSMilestone{4}{Later}{Synthetic body.}{Q4}
+\end{LSMilestoneSlide}
+
+\begin{LSMilestoneSlide}[
+  background=assets/backgrounds/milky-way-panorama.jpg,
+  focal-x=-0.10in,
+  focal-y=0.05in
+]{Five-stage layout}
+  \LSMilestone[status=completed]{1}{Done}{Synthetic body.}{Q1}
+  \LSMilestone[status=in-progress,accent=LSDeckMint]{2}{Active}{Synthetic body.}{Q2}
+  \LSMilestone{3}{Next}{Synthetic body.}{Q3}
+  \LSMilestone{4}{Later}{Synthetic body.}{Q4}
+  \LSMilestone{5}{Future}{Synthetic body.}{Q5}
+\end{LSMilestoneSlide}
+
+\begin{LSMilestoneSlide}{Six-stage row-wrap layout}
+  \LSMilestone[status=completed]{1}{Environmental qualification}
+    {Complete thermal-vacuum, vibration, and radiated-emissions verification.}{Q1}
+  \LSMilestone[status=completed]{2}{Gate two}{Synthetic body.}{Q2}
+  \LSMilestone[status=in-progress]{3}{Gate three}{Synthetic body.}{Q3}
+  \LSMilestone{4}{Gate four}{Synthetic body.}{Q4}
+  \LSMilestone{5}{Gate five}{Synthetic body.}{Q5}
+  \LSMilestone{6}{Manufacturing readiness review}
+    {Qualify suppliers, process controls, and end-of-line acceptance.}{Q6}
+\end{LSMilestoneSlide}
+
+\begin{LSMilestoneSlide}{Seven-stage centered second row}
+  \LSMilestone[status=completed]{1}{Gate one}{Synthetic body.}{Q1}
+  \LSMilestone[status=completed]{2}{Gate two}{Synthetic body.}{Q2}
+  \LSMilestone[status=in-progress]{3}{Gate three}{Synthetic body.}{Q3}
+  \LSMilestone{4}{Gate four}{Synthetic body.}{Q4}
+  \LSMilestone{5}{Gate five}{Synthetic body.}{Q5}
+  \LSMilestone{6}{Gate six}{Synthetic body.}{Q6}
+  \LSMilestone{7}{Gate seven}{Synthetic body.}{Q7}
+\end{LSMilestoneSlide}
+
+\begin{LSMilestoneSlide}{Eight-stage centered second row}
+  \LSMilestone[status=completed]{1}{Gate one}{Synthetic body.}{Q1}
+  \LSMilestone[status=completed]{2}{Gate two}{Synthetic body.}{Q2}
+  \LSMilestone[status=in-progress]{3}{Gate three}{Synthetic body.}{Q3}
+  \LSMilestone{4}{Gate four}{Synthetic body.}{Q4}
+  \LSMilestone{5}{Gate five}{Synthetic body.}{Q5}
+  \LSMilestone{6}{Gate six}{Synthetic body.}{Q6}
+  \LSMilestone{7}{Gate seven}{Synthetic body.}{Q7}
+  \LSMilestone{8}{Gate eight}{Synthetic body.}{Q8}
+\end{LSMilestoneSlide}
+
+\begin{LSMilestoneSlide}{Nine-stage centered second row}
+  \LSMilestone[status=completed]{1}{Gate one}{Synthetic body.}{Q1}
+  \LSMilestone[status=completed]{2}{Gate two}{Synthetic body.}{Q2}
+  \LSMilestone[status=in-progress]{3}{Gate three}{Synthetic body.}{Q3}
+  \LSMilestone{4}{Gate four}{Synthetic body.}{Q4}
+  \LSMilestone{5}{Gate five}{Synthetic body.}{Q5}
+  \LSMilestone{6}{Gate six}{Synthetic body.}{Q6}
+  \LSMilestone{7}{Gate seven}{Synthetic body.}{Q7}
+  \LSMilestone{8}{Gate eight}{Synthetic body.}{Q8}
+  \LSMilestone{9}{Gate nine}{Synthetic body.}{Q9}
+\end{LSMilestoneSlide}
+
+\begin{LSMilestoneSlide}{Ten-stage boundary layout}
+  \LSMilestone[status=completed]{1}{Gate one}{Synthetic body.}{Q1}
+  \LSMilestone[status=completed]{2}{Environmental qualification}
+    {Complete thermal-vacuum, vibration, and radiated-emissions verification.}{Q2}
+  \LSMilestone[status=completed]{3}{Gate three}{Synthetic body.}{Q3}
+  \LSMilestone[status=in-progress]{4}{Gate four}{Synthetic body.}{Q4}
+  \LSMilestone{5}{Gate five}{Synthetic body.}{Q5}
+  \LSMilestone{6}{Gate six}{Synthetic body.}{Q6}
+  \LSMilestone{7}{Manufacturing readiness review}
+    {Qualify suppliers, process controls, and end-of-line acceptance.}{Q7}
+  \LSMilestone{8}{Gate eight}{Synthetic body.}{Q8}
+  \LSMilestone{9}{Gate nine}{Synthetic body.}{Q9}
+  \LSMilestone{10}{Gate ten}{Synthetic body.}{Q10}
+\end{LSMilestoneSlide}
+
+\end{document}

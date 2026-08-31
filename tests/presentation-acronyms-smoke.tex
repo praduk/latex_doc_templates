@@ -1,0 +1,56 @@
+% Synthetic acronym pagination test. This file contains no controlled or
+% classified information and requires no glossary/index build step.
+\documentclass[aspectratio=169,professionalfonts]{beamer}
+\usetheme{LinearSpace}
+
+\LSSetup{
+  title={Synthetic Acronym Pagination Test},
+  short-title={Acronym Pagination Test},
+  author={Linear Space Test Suite},
+  organization={Linear Space},
+  document-id={LS-TEST-PRES-ACR},
+  revision={A},
+  status={Synthetic Test Only},
+  date={August 31, 2026}
+}
+\LSMarkingSetup{profile=uncontrolled,classification=none,controls={}}
+
+\LSDeclareAcronym{a01}{A01}{synthetic avionics architecture term one}
+\LSDeclareAcronym{a02}{A02}{synthetic avionics architecture term two}
+\LSDeclareAcronym{a03}{A03}{synthetic avionics architecture term three}
+\LSDeclareAcronym{a04}{A04}{synthetic avionics architecture term four}
+\LSDeclareAcronym{a05}{A05}{synthetic avionics architecture term five}
+\LSDeclareAcronym{a06}{A06}{synthetic avionics architecture term six}
+\LSDeclareAcronym{a07}{A07}{synthetic avionics architecture term seven}
+\LSDeclareAcronym{a08}{A08}{synthetic avionics architecture term eight}
+\LSDeclareAcronym{a09}{A09}{synthetic avionics architecture term nine}
+\LSDeclareAcronym{a10}{A10}{synthetic avionics architecture term ten}
+\LSDeclareAcronym{a11}{A11}{synthetic avionics architecture term eleven}
+\LSDeclareAcronym{a12}{A12}{synthetic avionics architecture term twelve}
+\LSDeclareAcronym{a13}{A13}{synthetic avionics architecture term thirteen}
+\LSDeclareAcronym{a14}{A14}{synthetic avionics architecture term fourteen}
+\LSDeclareAcronym{a15}{A15}{synthetic avionics architecture term fifteen}
+\LSDeclareAcronym{a16}{A16}{synthetic avionics architecture term sixteen}
+\LSDeclareAcronym{a17}{A17}{synthetic avionics architecture term seventeen}
+\LSDeclareAcronym{a18}{A18}{synthetic avionics architecture term eighteen}
+\LSDeclareAcronym{unused}{ZZZ}{this declared entry must remain omitted}
+
+\begin{document}
+
+% Exercise the explicit empty-state message before any acronym is recorded.
+\LSAcronymFrame[Empty acronym list test]
+
+% Record entries without consuming slide space. The public use macros update
+% global state, so this box can be discarded after it exercises the registry.
+\setbox0=\vbox{%
+  \LSAcronymShort{a01}\LSAcronymShort{a02}\LSAcronymShort{a03}%
+  \LSAcronymShort{a04}\LSAcronymShort{a05}\LSAcronymShort{a06}%
+  \LSAcronymShort{a07}\LSAcronymShort{a08}\LSAcronymShort{a09}%
+  \LSAcronymShort{a10}\LSAcronymShort{a11}\LSAcronymShort{a12}%
+  \LSAcronymShort{a13}\LSAcronymShort{a14}\LSAcronymShort{a15}%
+  \LSAcronymShort{a16}\LSAcronymShort{a17}\LSAcronymShort{a18}%
+}
+
+\LSAcronymFrame[Used acronyms]
+
+\end{document}

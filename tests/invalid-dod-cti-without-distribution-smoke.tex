@@ -1,0 +1,19 @@
+% Expected failure: DoD unclassified CTI requires a structured B--F statement.
+\documentclass[letterpaper]{article}
+\usepackage{linearspace-markings}
+\LSMarkingSetup{
+  profile=cui-dod,
+  classification=none,
+  controls={cui},
+  operator-confirms-controlled-environment=true,
+  banner-text={CUI},
+  controlled-by={Synthetic DoD Component},
+  controlled-office={Synthetic Program Office},
+  cui-categories={CTI},
+  distribution-dissemination-control={Synthetic internal control},
+  control-poc={test@example.invalid}
+}
+\begin{document}
+\LSMarkingNotices
+Synthetic expected-failure text; not CUI.
+\end{document}

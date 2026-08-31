@@ -1,0 +1,21 @@
+% Expected failure before shipout: an expandable blank is still blank.
+\documentclass[letterpaper]{article}
+\usepackage{linearspace-markings}
+\newcommand{\SyntheticBlank}{}
+\LSMarkingSetup{
+  profile=cui-dod,
+  classification=none,
+  controls={cui},
+  operator-confirms-controlled-environment=true,
+  banner-text={CUI},
+  controlled-by={Synthetic DoD Component},
+  controlled-office={Synthetic Program Office},
+  cui-categories={CTI},
+  control-poc={test@example.invalid},
+  distribution-code=E,
+  distribution-category={Controlled Technical Information},
+  distribution-date={30 AUG 2026},
+  distribution-office={\SyntheticBlank},
+  operator-confirms-dod-distribution-authority=true
+}
+\begin{document}Synthetic test.\end{document}

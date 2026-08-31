@@ -1,0 +1,118 @@
+\NeedsTeXFormat{LaTeX2e}[2022-11-01]
+\ProvidesPackage{linearspace-brand}[2026/08/30 Linear Space brand system]
+
+\RequirePackage{iftex}
+\ifLuaTeX\else
+  \PackageError{linearspace-brand}
+    {This template requires LuaLaTeX}
+    {Run scripts/build.py; it selects LuaLaTeX automatically.}
+\fi
+
+\RequirePackage{xcolor}
+\RequirePackage{graphicx}
+\RequirePackage{fontspec}
+\RequirePackage{xparse}
+
+\defaultfontfeatures{Ligatures=TeX,Scale=MatchLowercase}
+\IfFontExistsTF{TeX Gyre Pagella}
+  {\setmainfont{TeX Gyre Pagella}}
+  {\setmainfont{Latin Modern Roman}}
+\IfFontExistsTF{TeX Gyre Heros}
+  {\setsansfont{TeX Gyre Heros}}
+  {\setsansfont{Latin Modern Sans}}
+\IfFontExistsTF{Latin Modern Mono}
+  {\setmonofont{Latin Modern Mono}}
+  {}
+
+% Core palette. Keep semantic names stable so a project can rebrand centrally.
+\definecolor{LSNavy}{HTML}{081225}
+\definecolor{LSMidnight}{HTML}{0E1A33}
+\definecolor{LSBlue}{HTML}{235DFF}
+\definecolor{LSCyan}{HTML}{49C6F2}
+\definecolor{LSIce}{HTML}{EAF4FF}
+\definecolor{LSTeal}{HTML}{2BC7A0}
+\definecolor{LSAmber}{HTML}{F4B740}
+\definecolor{LSRed}{HTML}{B42335}
+% Dark enough for small white banner text while retaining a clear orange cue.
+\definecolor{LSOrange}{HTML}{AD470D}
+\definecolor{LSPurple}{HTML}{5B3FA3}
+\definecolor{LSInk}{HTML}{172033}
+\definecolor{LSSlate}{HTML}{536176}
+\definecolor{LSMist}{HTML}{EEF2F7}
+\definecolor{LSRule}{HTML}{CBD5E1}
+\definecolor{LSWhite}{HTML}{FFFFFF}
+
+\newcommand{\LSLogoLightFile}{assets/branding/linear-space-color.png}
+% The color mark has a transparent background and is safe over images. The
+% supplied dark-background raster is retained as an optional exact-black asset.
+\newcommand{\LSLogoDarkFile}{assets/branding/linear-space-color.png}
+\newcommand{\LSLogoSolarFile}{assets/branding/linear-space-solar-system.png}
+
+\NewDocumentCommand{\LSSetLogoLight}{m}{\renewcommand{\LSLogoLightFile}{#1}}
+\NewDocumentCommand{\LSSetLogoDark}{m}{\renewcommand{\LSLogoDarkFile}{#1}}
+\NewDocumentCommand{\LSSetLogoSolar}{m}{\renewcommand{\LSLogoSolarFile}{#1}}
+
+\NewDocumentCommand{\LSLogoOnLight}{O{1.65in}}{%
+  \IfFileExists{\LSLogoLightFile}
+    {\includegraphics[width=#1]{\LSLogoLightFile}}
+    {{\sffamily\bfseries\color{LSBlue}LINEAR SPACE}}%
+}
+
+\NewDocumentCommand{\LSLogoOnDark}{O{1.65in}}{%
+  \IfFileExists{\LSLogoDarkFile}
+    {\includegraphics[width=#1]{\LSLogoDarkFile}}
+    {{\sffamily\bfseries\color{LSWhite}LINEAR SPACE}}%
+}
+
+\NewDocumentCommand{\LSLogoSolar}{O{1.65in}}{%
+  \IfFileExists{\LSLogoSolarFile}
+    {\includegraphics[width=#1]{\LSLogoSolarFile}}
+    {{\sffamily\bfseries\color{LSNavy}LINEAR SPACE}}%
+}
+
+% Website-matched wordmark construction: the supplied artwork is the initial
+% L, followed immediately by typeset "inear Space".  The 32/75 scale is the
+% exact 38.4 px / 90 px website ratio.  The source PNG's alpha bounding box is
+% 367x443+81+28 in a 512x512 canvas.  Lowering the artwork by 40.5 source
+% pixels aligns the bottom-most active logo pixel with the bottom pixel of the
+% lowercase i after rasterization.  A 52.5-pixel optical tuck removes only the
+% excess right padding; at the fixed wordmark font ratio, the resulting
+% logo-to-i gap equals the visible i-to-n gap.  Both corrections scale with the
+% requested height.
+% Keeping the pair in one box preserves those relationships at every size and
+% prevents a line break inside the wordmark.
+\newcommand{\ls@wordmark}[3]{%
+  \begingroup
+    \leavevmode
+    \IfFileExists{#2}{%
+      \mbox{%
+        \raisebox{-\dimexpr#1*81/1024\relax}[#1][0pt]{%
+          \includegraphics[height=#1]{#2}%
+        }%
+        \kern\dimexpr-#1*105/1024\relax
+        {\sffamily\bfseries
+         \fontsize{\dimexpr#1*32/75\relax}{\dimexpr#1*64/125\relax}\selectfont
+         \color{#3}inear\ Space}%
+      }%
+    }{%
+      {\sffamily\bfseries
+       \fontsize{\dimexpr#1*32/75\relax}{\dimexpr#1*64/125\relax}\selectfont
+       \color{#3}Linear\ Space}%
+    }%
+  \endgroup
+}
+
+\NewDocumentCommand{\LSWordmark}{O{1.05in}}{%
+  \ls@wordmark{#1}{\LSLogoLightFile}{LSNavy}%
+}
+
+\NewDocumentCommand{\LSWordmarkDark}{O{1.05in}}{%
+  \ls@wordmark{#1}{\LSLogoDarkFile}{LSWhite}%
+}
+
+% Backward-compatible spellings use the same premium default scale and the
+% corrected wordmark construction.
+\NewDocumentCommand{\LSWordmarkOnLight}{O{1.05in}}{\LSWordmark[#1]}
+\NewDocumentCommand{\LSWordmarkOnDark}{O{1.05in}}{\LSWordmarkDark[#1]}
+
+\endinput

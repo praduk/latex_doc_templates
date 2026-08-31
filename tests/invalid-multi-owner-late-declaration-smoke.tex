@@ -1,0 +1,15 @@
+% Expected failure before shipout: owner declarations are preamble-only.
+\documentclass[letterpaper]{article}
+\usepackage{linearspace-markings}
+\LSMarkingSetup{
+  profile=corporate,
+  classification=none,
+  controls={proprietary},
+  proprietary-mode=multi-owner
+}
+\LSDeclareProprietaryOwner{Synthetic Owner Alpha}{First synthetic reviewed legend.}
+\LSDeclareProprietaryOwner{Synthetic Owner Beta}{Second synthetic reviewed legend.}
+\begin{document}
+\LSDeclareProprietaryOwner{Synthetic Owner Gamma}{Late synthetic reviewed legend.}
+This content must never render.
+\end{document}

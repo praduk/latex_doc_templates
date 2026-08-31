@@ -1,0 +1,31 @@
+% Synthetic marking-system test. Run with LuaLaTeX -draftmode only.
+% This file contains no classified information and is not classification authority.
+\documentclass[aspectratio=169,professionalfonts]{beamer}
+\usetheme{LinearSpace}
+\LSSetup{
+  title={Synthetic Classified-Profile Validation},
+  short-title={Synthetic Validation},
+  author={Template Test},
+  document-id={LS-TEST-SYNTHETIC},
+  revision={A},
+  status={Test},
+  date={2026-08-30}
+}
+\LSMarkingSetup{
+  profile=classified-dod,
+  classification=secret,
+  controls={},
+  operator-confirms-classified-environment=true,
+  banner-text={SECRET},
+  authority-type=derivative,
+  classified-by={Synthetic Test Classifier},
+  derived-from={Synthetic Test Security Classification Guide},
+  declassify-on={30 AUG 2036}
+}
+\title{\LSTitle}
+\author{\LSAuthor}
+\date{\LSDate}
+\begin{document}
+\begin{frame}\titlepage\end{frame}
+\LSMarkingDisclosureFrame
+\end{document}

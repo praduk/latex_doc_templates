@@ -1,0 +1,170 @@
+\NeedsTeXFormat{LaTeX2e}[2022-11-01]
+\ProvidesPackage{linearspace-acronyms}[2026/08/31 Lightweight acronym registry]
+
+% Deliberately self-contained: this registry needs no makeindex, glossaries,
+% shell escape, or additional build pass.  It is therefore safe in the same
+% Windows/macOS/Linux workflow as the rest of the templates.
+\RequirePackage{expl3}
+\RequirePackage{xparse}
+
+\ExplSyntaxOn
+
+\prop_new:N \g_ls_acronym_short_prop
+\prop_new:N \g_ls_acronym_long_prop
+\prop_new:N \g_ls_acronym_seen_prop
+\prop_new:N \g_ls_acronym_used_prop
+\seq_new:N  \g_ls_acronym_order_seq
+\bool_new:N \g_ls_acronym_expand_first_bool
+\bool_gset_true:N \g_ls_acronym_expand_first_bool
+
+\msg_new:nnnn {linearspace-acronyms}{duplicate}
+  {Acronym~'#1'~has~already~been~declared.}
+  {Use~one~unique~key~per~acronym;~edit~the~original~declaration~instead.}
+\msg_new:nnnn {linearspace-acronyms}{unknown}
+  {Acronym~'#1'~has~not~been~declared.}
+  {Declare~it~with~\string\LSDeclareAcronym~before~the~first~use.}
+\msg_new:nnnn {linearspace-acronyms}{empty}
+  {The~#1~for~acronym~'#2'~is~blank.}
+  {Acronym~keys,~short~forms,~and~long~forms~must~all~be~nonblank.}
+
+\keys_define:nn {linearspace/acronyms}
+  {
+    expand-first-use .bool_gset:N = \g_ls_acronym_expand_first_bool,
+  }
+
+\cs_new_protected:Npn \ls_acronym_require:n #1
+  {
+    \prop_if_in:NnF \g_ls_acronym_short_prop {#1}
+      {\msg_fatal:nnn {linearspace-acronyms}{unknown}{#1}}
+  }
+
+\cs_new_protected:Npn \ls_acronym_mark_used:n #1
+  {\prop_gput:Nnn \g_ls_acronym_used_prop {#1}{true}}
+
+\cs_new_protected:Npn \ls_acronym_mark_seen:n #1
+  {\prop_gput:Nnn \g_ls_acronym_seen_prop {#1}{true}}
+
+\cs_new:Npn \ls_acronym_short:n #1
+  {\prop_item:Nn \g_ls_acronym_short_prop {#1}}
+\cs_new:Npn \ls_acronym_long:n #1
+  {\prop_item:Nn \g_ls_acronym_long_prop {#1}}
+\cs_new:Npn \ls_acronym_full:n #1
+  {\ls_acronym_long:n {#1}~(\ls_acronym_short:n {#1})}
+
+\NewDocumentCommand{\LSAcronymSetup}{m}
+  {\keys_set:nn {linearspace/acronyms}{#1}}
+
+\NewDocumentCommand{\LSDeclareAcronym}{m m m}
+  {
+    \tl_if_blank:nT {#1}
+      {\msg_fatal:nnnn {linearspace-acronyms}{empty}{key}{#1}}
+    \tl_if_blank:nT {#2}
+      {\msg_fatal:nnnn {linearspace-acronyms}{empty}{short~form}{#1}}
+    \tl_if_blank:nT {#3}
+      {\msg_fatal:nnnn {linearspace-acronyms}{empty}{long~form}{#1}}
+    \prop_if_in:NnTF \g_ls_acronym_short_prop {#1}
+      {\msg_fatal:nnn {linearspace-acronyms}{duplicate}{#1}}
+      {
+        \prop_gput:Nnn \g_ls_acronym_short_prop {#1}{#2}
+        \prop_gput:Nnn \g_ls_acronym_long_prop {#1}{#3}
+        \seq_gput_right:Nn \g_ls_acronym_order_seq {#1}
+      }
+  }
+
+% Default use expands once, unless globally disabled.  The starred form emits
+% only the short form and still records that the acronym has been introduced.
+\NewDocumentCommand{\LSAcronym}{s m}
+  {
+    \ls_acronym_require:n {#2}
+    \ls_acronym_mark_used:n {#2}
+    \IfBooleanTF{#1}
+      {\ls_acronym_short:n {#2}}
+      {
+        \prop_if_in:NnTF \g_ls_acronym_seen_prop {#2}
+          {\ls_acronym_short:n {#2}}
+          {
+            \bool_if:NTF \g_ls_acronym_expand_first_bool
+              {\ls_acronym_full:n {#2}}
+              {\ls_acronym_short:n {#2}}
+          }
+      }
+    \ls_acronym_mark_seen:n {#2}
+  }
+
+\NewDocumentCommand{\LSAcronymShort}{m}
+  {
+    \ls_acronym_require:n {#1}
+    \ls_acronym_mark_used:n {#1}
+    \ls_acronym_mark_seen:n {#1}
+    \ls_acronym_short:n {#1}
+  }
+
+% A long-only use does not mark the abbreviation as introduced; a later
+% \LSAcronym call can still emit the full long (short) form.
+\NewDocumentCommand{\LSAcronymLong}{m}
+  {
+    \ls_acronym_require:n {#1}
+    \ls_acronym_mark_used:n {#1}
+    \ls_acronym_long:n {#1}
+  }
+
+\NewDocumentCommand{\LSAcronymFull}{m}
+  {
+    \ls_acronym_require:n {#1}
+    \ls_acronym_mark_used:n {#1}
+    \ls_acronym_mark_seen:n {#1}
+    \ls_acronym_full:n {#1}
+  }
+
+\NewDocumentCommand{\LSResetAcronym}{m}
+  {
+    \ls_acronym_require:n {#1}
+    \prop_gremove:Nn \g_ls_acronym_seen_prop {#1}
+  }
+
+\NewDocumentCommand{\LSResetAllAcronyms}{}
+  {\prop_gclear:N \g_ls_acronym_seen_prop}
+
+\NewDocumentCommand{\LSClearUsedAcronyms}{}
+  {\prop_gclear:N \g_ls_acronym_used_prop}
+
+\newcommand{\LSAcronymShortStyle}[1]{\textbf{#1}}
+\newcommand{\LSAcronymLongStyle}[1]{#1}
+
+\cs_new_protected:Npn \ls_acronym_print_row:n #1
+  {
+    \prop_if_in:NnT \g_ls_acronym_used_prop {#1}
+      {
+        % Keep each entry together, but leave ordinary vertical breakpoints
+        % between entries.  Unlike one monolithic tabularx, this structure can
+        % flow across Beamer allowframebreaks continuations and ordinary pages.
+        \par\noindent
+        \begin{minipage}[t]{0.20\linewidth}
+          \raggedright\strut
+          \LSAcronymShortStyle{\ls_acronym_short:n {#1}}\strut\par
+        \end{minipage}\hfill
+        \begin{minipage}[t]{0.76\linewidth}
+          \raggedright\strut
+          \LSAcronymLongStyle{\ls_acronym_long:n {#1}}\strut\par
+        \end{minipage}
+        \par\penalty0\vspace{0.055in plus 0.015in minus 0.010in}
+      }
+  }
+
+\NewDocumentCommand{\LSPrintAcronyms}{}
+  {
+    \int_zero:N \l_tmpa_int
+    \seq_map_inline:Nn \g_ls_acronym_order_seq
+      {\prop_if_in:NnT \g_ls_acronym_used_prop {##1}{\int_incr:N \l_tmpa_int}}
+    \int_compare:nNnTF {\l_tmpa_int} = {0}
+      {\emph{No~acronyms~have~been~used.}}
+      {
+        \begingroup
+          \seq_map_function:NN \g_ls_acronym_order_seq \ls_acronym_print_row:n
+        \endgroup
+      }
+  }
+
+\ExplSyntaxOff
+
+\endinput

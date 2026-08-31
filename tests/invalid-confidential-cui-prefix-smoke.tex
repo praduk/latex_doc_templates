@@ -1,0 +1,20 @@
+% Expected failure before shipout: general Confidential+CUI output begins CONFIDENTIAL//CUI.
+% This file contains no classified or controlled information.
+\documentclass[letterpaper]{article}
+\usepackage{linearspace-markings}
+\LSMarkingSetup{
+  profile=classified-general,
+  classification=confidential,
+  controls={cui},
+  operator-confirms-controlled-environment=true,
+  operator-confirms-classified-environment=true,
+  banner-text={CONFIDENTIAL//SYNTHETIC//CUI},
+  controlled-by={Synthetic Test Authority},
+  cui-categories={Synthetic Category},
+  control-poc={test@example.invalid},
+  authority-type=derivative,
+  classified-by={Synthetic Test Classifier},
+  derived-from={Synthetic Test Security Classification Guide},
+  declassify-on={30 AUG 2036}
+}
+\begin{document}This content must never render.\end{document}

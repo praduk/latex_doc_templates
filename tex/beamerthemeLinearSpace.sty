@@ -1,0 +1,1267 @@
+\NeedsTeXFormat{LaTeX2e}[2022-11-01]
+\ProvidesPackage{beamerthemeLinearSpace}[2026/08/30 Linear Space dark Beamer theme]
+
+\RequirePackage{linearspace-brand}
+\RequirePackage{linearspace-math}
+\RequirePackage{linearspace-markings}
+\RequirePackage{linearspace-acronyms}
+\RequirePackage{etoolbox}
+\RequirePackage{xparse}
+\RequirePackage{ragged2e}
+\RequirePackage{pdfrender}
+
+\LSRegisterPresentationRenderer
+
+% Palette extracted from the supplied fundraising deck.
+\definecolor{LSDeckBlack}{HTML}{000000}
+\definecolor{LSDeckWhite}{HTML}{FFFFFF}
+\definecolor{LSDeckOffWhite}{HTML}{F5F5F5}
+\definecolor{LSDeckCharcoal}{HTML}{323232}
+\definecolor{LSDeckRule}{HTML}{434343}
+\definecolor{LSDeckLime}{HTML}{DEFF9A}
+\definecolor{LSDeckMint}{HTML}{DAFFDE}
+\definecolor{LSDeckGreen}{HTML}{4CDC8B}
+\definecolor{LSDeckBlue}{HTML}{4C7FDC}
+
+% Deterministic across platforms; do not depend on or extract the reference
+% PowerPoint's embedded Urbanist font.
+\setsansfont{TeX Gyre Heros}
+\renewcommand{\familydefault}{\sfdefault}
+\usefonttheme{professionalfonts}
+
+\mode<presentation>
+\geometry{paperwidth=10in,paperheight=5.625in}
+\setbeamertemplate{navigation symbols}{}
+\setbeamersize{text margin left=0.30in,text margin right=0.30in}
+
+\setbeamercolor{normal text}{fg=LSDeckOffWhite,bg=LSDeckBlack}
+\setbeamercolor{background canvas}{bg=LSDeckBlack}
+\setbeamercolor{structure}{fg=LSDeckLime}
+\setbeamercolor{title}{fg=LSDeckWhite}
+\setbeamercolor{subtitle}{fg=LSDeckOffWhite}
+\setbeamercolor{frametitle}{fg=LSDeckWhite,bg=LSDeckBlack}
+\setbeamercolor{framesubtitle}{fg=LSDeckOffWhite}
+% Leave the footline background transparent.  A solid beamercolorbox
+% background can obscure the hairline above it when a frame changes the
+% vertical box origin (for example, after a large display or TikZ picture).
+\setbeamercolor{footline}{fg=LSDeckOffWhite}
+\setbeamercolor{block title}{fg=LSDeckBlack,bg=LSDeckLime}
+\setbeamercolor{block body}{fg=LSDeckOffWhite,bg=LSDeckCharcoal}
+\setbeamercolor{block title alerted}{fg=LSDeckBlack,bg=LSAmber}
+\setbeamercolor{block body alerted}{fg=LSDeckOffWhite,bg=LSDeckCharcoal}
+\setbeamercolor{alerted text}{fg=LSDeckLime}
+
+\setbeamerfont{title}{size=\fontsize{48}{52},series=\bfseries}
+\setbeamerfont{subtitle}{size=\fontsize{22}{27},series=\mdseries}
+\setbeamerfont{author}{size=\fontsize{16}{20}}
+\setbeamerfont{date}{size=\fontsize{13}{16}}
+% 36 pt remains comfortably legible on a 16:9 display while recovering enough
+% vertical space for evidence-rich content.  Keep single-line titles concise.
+\setbeamerfont{frametitle}{size=\fontsize{36}{40},series=\bfseries}
+\setbeamerfont{framesubtitle}{size=\fontsize{20}{24},series=\mdseries}
+\setbeamerfont{normal text}{size=\fontsize{20}{25}}
+\setbeamerfont{block title}{size=\fontsize{20}{24},series=\bfseries}
+\setbeamerfont{block body}{size=\fontsize{17}{22}}
+\setbeamerfont{footline}{size=\fontsize{9.3}{11}}
+
+\setbeamertemplate{itemize item}{%
+  \raisebox{0.12ex}{\tikz\fill[LSDeckLime,rounded corners=0.4pt] (0,0) rectangle (0.080in,0.080in);}}
+\setbeamertemplate{itemize subitem}{%
+  \raisebox{0.16ex}{\tikz\fill[LSDeckGreen] (0,0) circle[radius=0.030in];}}
+\setbeamertemplate{itemize subsubitem}{%
+  \raisebox{0.16ex}{\tikz\draw[LSDeckMint,line width=0.7pt] (0,0) circle[radius=0.026in];}}
+\setbeamertemplate{enumerate item}{%
+  \tikz[baseline=(n.base)]\node[
+    circle,fill=LSDeckLime,text=LSDeckBlack,inner sep=0pt,
+    minimum size=0.19in,font=\bfseries\fontsize{10}{10}\selectfont
+  ] (n) {\insertenumlabel};}
+\setlength{\leftmargini}{1.25em}
+\setlength{\leftmarginii}{1.15em}
+\setlength{\leftmarginiii}{1.05em}
+\addtobeamertemplate{itemize/enumerate body begin}{\setlength{\itemsep}{0.13in}}{}
+\addtobeamertemplate{itemize/enumerate subbody begin}{\setlength{\itemsep}{0.07in}}{}
+
+\setbeamertemplate{blocks}[rounded][shadow=false]
+
+\pgfplotsset{
+  linearspace dark/.style={
+    linearspace,
+    axis line style={draw=LSDeckOffWhite!65},
+    tick style={draw=LSDeckOffWhite!65},
+    tick label style={font=\fontsize{12}{14}\selectfont,color=LSDeckOffWhite},
+    label style={font=\fontsize{13}{15}\selectfont,color=LSDeckOffWhite},
+    title style={font=\bfseries\fontsize{14}{16}\selectfont,color=LSDeckWhite},
+    grid style={draw=LSDeckRule,line width=0.35pt},
+    legend style={draw=none,fill=LSDeckBlack!85,font=\fontsize{11}{13}\selectfont,text=LSDeckOffWhite},
+  }
+}
+
+% A background image is scaled to cover the entire 16:9 canvas and clipped;
+% it is never stretched. The optional overlay is a black opacity from 0 to 1.
+\newcommand{\ls@backgroundfile}{}
+\newcommand{\ls@backgroundopacity}{0.38}
+\newcommand{\ls@backgroundxshift}{0in}
+\newcommand{\ls@backgroundyshift}{0in}
+\newif\ifls@syntheticdemo
+\ls@syntheticdemofalse
+
+% Named backgrounds are a convenience, never a closed list: every API below
+% also accepts an arbitrary readable image path.  Independently sourced
+% examples are registered alongside the owner-approved supplied library; the
+% project provenance record remains authoritative for publication review.
+\NewDocumentCommand{\LSDeclareBackground}{m m}{%
+  \expandafter\def\csname ls@background@#1\endcsname{#2}%
+}
+\newcommand{\ls@resolvebackground}[1]{%
+\ifcsname ls@background@#1\endcsname%
+\csname ls@background@#1\endcsname%
+\else%
+#1%
+\fi%
+}
+\NewExpandableDocumentCommand{\LSBackgroundPath}{m}{\ls@resolvebackground{#1}}
+
+\LSDeclareBackground{webb-clouds}{assets/backgrounds/james-webb-cloudy-space-16x9.jpg}
+\LSDeclareBackground{milky-way-panorama}{assets/backgrounds/milky-way-panorama.jpg}
+\LSDeclareBackground{black-hole}{assets/backgrounds/user-supplied/black-hole.png}
+\LSDeclareBackground{explosive-galaxy}{assets/backgrounds/user-supplied/explosive-galaxy.jpg}
+\LSDeclareBackground{galaxy-explosion-render}{assets/backgrounds/user-supplied/galaxy-explosion-render.png}
+\LSDeclareBackground{webb-clouds-original}{assets/backgrounds/user-supplied/james-webb-cloudy-space-original.png}
+\LSDeclareBackground{jupiter-rings}{assets/backgrounds/user-supplied/jwst-jupiter-rings.jpg}
+\LSDeclareBackground{milky-way-supplied}{assets/backgrounds/user-supplied/milky-way-supplied.jpg}
+\LSDeclareBackground{moon-from-earth}{assets/backgrounds/user-supplied/moon-from-earth.png}
+\LSDeclareBackground{night-sky}{assets/backgrounds/user-supplied/night-sky.jpg}
+\LSDeclareBackground{phantom-galaxy}{assets/backgrounds/user-supplied/phantom-galaxy.jpg}
+\LSDeclareBackground{pillars-of-creation}{assets/backgrounds/user-supplied/pillars-of-creation.png}
+\LSDeclareBackground{tarantula-nebula}{assets/backgrounds/user-supplied/tarantula-nebula-jwst.png}
+\LSDeclareBackground{red-blue-galactic-core}{assets/backgrounds/user-supplied/red-blue-galactic-core.png}
+
+\newcommand{\ls@requirebackground}[1]{%
+  \IfFileExists{#1}{}{%
+    \PackageError{beamerthemeLinearSpace}
+      {Background '#1' was not found}
+      {Pass a registered background name or a readable image path.}%
+  }%
+}
+
+\newcommand{\LSTitleBackgroundFile}{assets/backgrounds/user-supplied/red-blue-galactic-core.png}
+\newcommand{\LSTitleBackgroundXShift}{0in}
+\newcommand{\LSTitleBackgroundYShift}{0in}
+\newcommand{\LSTitleBackgroundOverlayOpacity}{0}
+\newcommand{\LSTitleBackgroundCreditText}{}
+\NewDocumentCommand{\LSTitleBackground}{m}{%
+  \edef\LSTitleBackgroundFile{\ls@resolvebackground{#1}}%
+}
+\NewDocumentCommand{\LSSetTitleBackground}{m}{\LSTitleBackground{#1}}
+\NewDocumentCommand{\LSTitleBackgroundFocus}{m m}{%
+  \renewcommand{\LSTitleBackgroundXShift}{#1}%
+  \renewcommand{\LSTitleBackgroundYShift}{#2}%
+}
+\ExplSyntaxOn
+\msg_new:nnnn {beamerthemeLinearSpace}{title-overlay-range}
+  {Title~background~overlay~'#1'~is~outside~the~supported~range.}
+  {Use~a~decimal~opacity~from~0~(no~darkening)~through~1~(fully~black).}
+\NewDocumentCommand{\LSTitleBackgroundOverlay}{m}
+  {
+    \fp_compare:nNnTF {#1} < {0}
+      {\msg_fatal:nnn {beamerthemeLinearSpace}{title-overlay-range}{#1}}
+      {
+        \fp_compare:nNnTF {#1} > {1}
+          {\msg_fatal:nnn {beamerthemeLinearSpace}{title-overlay-range}{#1}}
+          {\cs_set:Npx \LSTitleBackgroundOverlayOpacity {\fp_eval:n {#1}}}
+      }
+  }
+\ExplSyntaxOff
+\NewDocumentCommand{\LSTitleBackgroundCredit}{m}{%
+  \renewcommand{\LSTitleBackgroundCreditText}{#1}%
+}
+\NewDocumentCommand{\LSEnableSyntheticDemoWatermark}{}{\ls@syntheticdemotrue}
+
+\newsavebox{\ls@scaledimagebox}
+\newcommand{\ls@covergraphic}[1]{%
+  \sbox{\ls@scaledimagebox}{\includegraphics[width=\paperwidth]{#1}}%
+  \ifdim\ht\ls@scaledimagebox<\paperheight
+    \includegraphics[height=\paperheight]{#1}%
+  \else
+    \usebox{\ls@scaledimagebox}%
+  \fi
+}
+
+% Cover-crop an image into an arbitrary box while preserving aspect ratio.
+% The surrounding TikZ clip controls the visible crop; the image itself is
+% never stretched.
+\newsavebox{\ls@coverbox}
+\newcommand{\ls@covergraphicbox}[3]{%
+  \sbox{\ls@coverbox}{\includegraphics[width=#2]{#1}}%
+  \ifdim\ht\ls@coverbox<#3
+    \includegraphics[height=#3]{#1}%
+  \else
+    \usebox{\ls@coverbox}%
+  \fi
+}
+
+\newcommand{\ls@syntheticdemowatermark}{%
+  \ifls@syntheticdemo
+    \begin{tikzpicture}[remember picture,overlay]
+      \node[
+        rotate=16,text=LSDeckWhite,opacity=0.16,
+        font=\bfseries\fontsize{24}{28}\selectfont,
+        inner sep=0pt
+      ] at (current page.center)
+        {SYNTHETIC DEMONSTRATION --- NOT CLASSIFIED};
+    \end{tikzpicture}%
+  \fi
+}
+
+\newcommand{\ls@paintbackground}{%
+  % Draw a real paper-sized canvas.  A remembered overlay alone can leave the
+  % body transparent when a large custom TikZ layout changes the frame's box
+  % origin; the fixed canvas keeps every frame dark in every PDF renderer.
+  \begin{tikzpicture}[baseline=0pt]
+    \path[use as bounding box] (0,0) rectangle (\paperwidth,\paperheight);
+    \fill[LSDeckBlack] (0,0) rectangle (\paperwidth,\paperheight);
+    \ifdefempty{\ls@backgroundfile}
+      {}
+      {%
+        \ls@requirebackground{\ls@backgroundfile}%
+        \node[
+          anchor=center,inner sep=0,
+          xshift=\ls@backgroundxshift,yshift=\ls@backgroundyshift
+        ] at (0.5\paperwidth,0.5\paperheight)
+          {\ls@covergraphic{\ls@backgroundfile}};
+        \fill[LSDeckBlack,opacity=\ls@backgroundopacity]
+          (0,0) rectangle (\paperwidth,\paperheight);
+      }%
+  \end{tikzpicture}%
+  \ls@syntheticdemowatermark
+}
+
+\setbeamertemplate{background canvas}{\ls@paintbackground}
+
+\NewDocumentEnvironment{LSImageFrame}{O{0.42} m +b}{%
+  \begingroup
+  \edef\ls@backgroundfile{\ls@resolvebackground{#2}}%
+  \ls@requirebackground{\ls@backgroundfile}%
+  \renewcommand{\ls@backgroundopacity}{#1}%
+  \renewcommand{\ls@backgroundxshift}{0in}%
+  \renewcommand{\ls@backgroundyshift}{0in}%
+  \begin{frame}#3%
+  \end{frame}
+  \endgroup
+}{}
+
+% Key-value successor to LSImageFrame.  Use a registered name or direct path;
+% focal shifts move the cover-cropped image without changing its aspect ratio.
+\pgfkeys{
+  /ls/background frame/.is family,
+  /ls/background frame,
+  opacity/.store in=\ls@framebackgroundopacity,
+  focal-x/.store in=\ls@framebackgroundxshift,
+  focal-y/.store in=\ls@framebackgroundyshift,
+}
+\NewDocumentEnvironment{LSBackgroundFrame}{O{} m +b}{%
+  \begingroup
+  \def\ls@framebackgroundopacity{0.42}%
+  \def\ls@framebackgroundxshift{0in}%
+  \def\ls@framebackgroundyshift{0in}%
+  \pgfkeys{/ls/background frame,#1}%
+  \edef\ls@backgroundfile{\ls@resolvebackground{#2}}%
+  \ls@requirebackground{\ls@backgroundfile}%
+  \edef\ls@backgroundopacity{\ls@framebackgroundopacity}%
+  \edef\ls@backgroundxshift{\ls@framebackgroundxshift}%
+  \edef\ls@backgroundyshift{\ls@framebackgroundyshift}%
+  \begin{frame}#3%
+  \end{frame}
+  \endgroup
+}{}
+
+\newcommand{\LSFrameBannerText}{\LSBannerText}
+\newcommand{\LSFrameBannerColor}{\LSBannerColor}
+\newif\ifls@framebanneroverride
+\ls@framebanneroverridefalse
+\NewDocumentCommand{\LSFrameBanner}{m}{%
+  \LSValidateBanner{#1}%
+  \edef\LSFrameBannerText{\LSValidatedBannerText}%
+  \ls@framebanneroverridetrue
+}
+\AtBeginDocument{%
+  \ifls@framebanneroverride
+    \LSValidateBanner{\LSFrameBannerText}%
+  \fi
+}
+
+% Slide-local downgrades for mixed CUI/classified presentations.  The overall
+% title slide always retains the document banner.  This scope applies to one
+% frame-producing construct, including the custom team/milestone/background
+% helpers, and then restores the inclusive document marking automatically.
+\ExplSyntaxOn
+\bool_new:N \l_ls_slide_marking_active_bool
+\bool_new:N \g_ls_slide_prior_shipout_bool
+\int_new:N \g_ls_slide_marking_frame_count_int
+\int_new:N \g_ls_slide_marking_shipout_count_int
+
+\msg_new:nnnn {beamerthemeLinearSpace}{slide-marking-nested}
+  {LSSlideMarking~environments~cannot~be~nested.}
+  {Close~the~current~one-frame~marking~scope~before~opening~another.}
+\msg_new:nnnn {beamerthemeLinearSpace}{slide-marking-first}
+  {The~first~slide~cannot~use~a~downgraded~slide~marking.}
+  {Render~the~classified~document's~inclusive~banner~and~title-page~notices~on~slide~one.}
+\msg_new:nnnn {beamerthemeLinearSpace}{slide-marking-profile}
+  {LSSlideMarking~requires~an~authorized~CUI-bearing~or~classified~document~profile.}
+  {Use~profile=cui-general,~cui-dod,~classified-general,~or~classified-dod;~ordinary~uncontrolled/corporate/unclassified~decks~do~not~need~slide-local~downgrades.}
+\msg_new:nnnn {beamerthemeLinearSpace}{slide-marking-mode}
+  {Unknown~slide-marking~mode~'#1'.}
+  {Use~exactly~unclassified~or~cui.}
+\msg_new:nnnn {beamerthemeLinearSpace}{slide-marking-count}
+  {LSSlideMarking~contains~#1~frames.}
+  {Wrap~exactly~one~frame~or~one~frame-producing~Linear~Space~helper.}
+\msg_new:nnnn {beamerthemeLinearSpace}{slide-marking-pages}
+  {LSSlideMarking~produced~#1~physical~slides.}
+  {Use~one~nonbreaking~frame;~bibliography/acronym~continuations~must~retain~the~inclusive~document~banner.}
+\msg_new:nnnn {beamerthemeLinearSpace}{slide-marking-unclassified-banner}
+  {The~optional~banner~argument~must~be~blank~for~unclassified~mode.}
+  {Use~\string\begin{LSSlideMarking}\{unclassified\};~the~exact~UNCLASSIFIED~banner~is~automatic.}
+\msg_new:nnnn {beamerthemeLinearSpace}{slide-marking-breaking}
+  {LSSlideMarking~cannot~wrap~a~frame~with~allowframebreaks.}
+  {A~local~downgrade~must~produce~exactly~one~physical~slide;~use~the~inclusive~document~banner~for~continuations.}
+
+\cs_new_protected:Npn \LSInternalSlideMarkingFrameBegin
+  {
+    \bool_if:NT \l_ls_slide_marking_active_bool
+      {
+        \int_gincr:N \g_ls_slide_marking_frame_count_int
+        \int_compare:nNnT {\g_ls_slide_marking_frame_count_int} > {1}
+          {\msg_fatal:nne {beamerthemeLinearSpace}{slide-marking-count}
+            {\int_use:N \g_ls_slide_marking_frame_count_int}}
+      }
+  }
+
+\cs_new_protected:Npn \LSInternalSlideMarkingShipoutBefore
+  {
+    \bool_if:NT \l_ls_slide_marking_active_bool
+      {
+        \int_gincr:N \g_ls_slide_marking_shipout_count_int
+        \int_compare:nNnT {\g_ls_slide_marking_shipout_count_int} > {1}
+          {\msg_fatal:nne {beamerthemeLinearSpace}{slide-marking-pages}
+            {\int_use:N \g_ls_slide_marking_shipout_count_int}}
+      }
+  }
+
+\cs_new_protected:Npn \LSInternalSlideMarkingShipoutAfter
+  {\bool_gset_true:N \g_ls_slide_prior_shipout_bool}
+
+\cs_new_protected:Npn \LSInternalSlideMarkingAllowFrameBreaks
+  {\bool_if:NT \l_ls_slide_marking_active_bool
+    {\msg_fatal:nn {beamerthemeLinearSpace}{slide-marking-breaking}}}
+
+\cs_new_protected:Npn \ls_slide_marking_prepare:nn #1#2
+  {
+    \bool_set_false:N \l_tmpa_bool
+    \ls_profile_cui:T {\bool_set_true:N \l_tmpa_bool}
+    \ls_profile_classified:T {\bool_set_true:N \l_tmpa_bool}
+    \bool_if:NF \l_tmpa_bool
+      {\msg_fatal:nn {beamerthemeLinearSpace}{slide-marking-profile}}
+    \str_case:nnF {#2}
+      {
+        {unclassified}
+          {
+            \tl_if_blank:nF {#1}
+              {\msg_fatal:nn {beamerthemeLinearSpace}
+                {slide-marking-unclassified-banner}}
+            \def\LSFrameBannerText{UNCLASSIFIED}
+            \def\LSFrameBannerColor{LSUnclassifiedGreen}
+          }
+        {cui}
+          {
+            \tl_if_blank:nTF {#1}
+              {\LSValidateCUIOnlyBanner{CUI}}
+              {\LSValidateCUIOnlyBanner{#1}}
+            \edef\LSFrameBannerText{\LSValidatedBannerText}
+            \def\LSFrameBannerColor{LSPurple}
+          }
+      }
+      {\msg_fatal:nnn {beamerthemeLinearSpace}{slide-marking-mode}{#2}}
+  }
+
+\NewDocumentEnvironment{LSSlideMarking}{O{} m +b}{%
+  \begingroup
+    \bool_if:NT \l_ls_slide_marking_active_bool
+      {\msg_fatal:nn {beamerthemeLinearSpace}{slide-marking-nested}}
+    \bool_if:NF \g_ls_slide_prior_shipout_bool
+      {\msg_fatal:nn {beamerthemeLinearSpace}{slide-marking-first}}
+    \ls_slide_marking_prepare:nn {#1}{#2}
+    \int_gzero:N \g_ls_slide_marking_frame_count_int
+    \int_gzero:N \g_ls_slide_marking_shipout_count_int
+    \bool_set_true:N \l_ls_slide_marking_active_bool
+    #3%
+    \bool_set_false:N \l_ls_slide_marking_active_bool
+    \int_compare:nNnF {\g_ls_slide_marking_frame_count_int} = {1}
+      {\msg_fatal:nne {beamerthemeLinearSpace}{slide-marking-count}
+        {\int_use:N \g_ls_slide_marking_frame_count_int}}
+    \int_compare:nNnF {\g_ls_slide_marking_shipout_count_int} = {1}
+      {\msg_fatal:nne {beamerthemeLinearSpace}{slide-marking-pages}
+        {\int_use:N \g_ls_slide_marking_shipout_count_int}}
+    \int_gzero:N \g_ls_slide_marking_frame_count_int
+    \int_gzero:N \g_ls_slide_marking_shipout_count_int
+  \endgroup
+}{}
+\ExplSyntaxOff
+
+\AtBeginEnvironment{frame}{\LSInternalSlideMarkingFrameBegin}
+\AddToHook{shipout/before}{\LSInternalSlideMarkingShipoutBefore}
+\AddToHook{shipout/after}{\LSInternalSlideMarkingShipoutAfter}
+\let\ls@originalallowframebreakskey\KV@beamerframe@allowframebreaks
+\define@key{beamerframe}{allowframebreaks}[0.95]{%
+  \LSInternalSlideMarkingAllowFrameBreaks
+  \ls@originalallowframebreakskey{#1}%
+}
+
+% Use the same measured bar in the headline and footline so controlled banners
+% have identical height and do not depend on \colorbox's default padding.
+\newcommand{\ls@bannerbar}{%
+  \LSConfirmAlternateBannerRendered
+  \begin{tikzpicture}[baseline=0pt]
+    \path[use as bounding box] (0,0) rectangle (\paperwidth,0.19in);
+    \fill[\LSFrameBannerColor] (0,0) rectangle (\paperwidth,0.19in);
+    \node[
+      anchor=center,inner sep=0pt,align=center,text=white,
+      text width=\dimexpr\paperwidth-0.20in\relax,
+      font=\sffamily\bfseries\fontsize{8.5}{9.5}\selectfont
+    ] at (0.5\paperwidth,0.095in) {\LSFrameBannerText};
+  \end{tikzpicture}%
+}
+
+\setbeamertemplate{headline}{%
+  \LSIfBlankTF{\LSFrameBannerText}{}{%
+    \ls@bannerbar
+  }%
+}
+
+\setbeamertemplate{frametitle}{%
+  \nointerlineskip
+  \begin{beamercolorbox}[wd=\paperwidth,ht=0.70in,dp=0.07in,leftskip=0.30in,rightskip=0.30in]{frametitle}
+    \leftskip=0.30in\relax
+    \rightskip=0.30in plus 2em\relax
+    \parfillskip=0pt plus 1fil\relax
+    \hyphenpenalty=10000\exhyphenpenalty=10000%
+    \usebeamerfont{frametitle}\insertframetitle
+    \ifx\insertframesubtitle\@empty\else
+      \par\vspace{0.05in}{\usebeamerfont{framesubtitle}\usebeamercolor[fg]{framesubtitle}\insertframesubtitle}
+    \fi
+  \end{beamercolorbox}%
+}
+
+\setbeamertemplate{footline}{%
+  \leavevmode
+  \hbox to \paperwidth{\hspace{0.26in}\color{LSDeckRule}\rule{\dimexpr\paperwidth-0.52in\relax}{0.45pt}\hspace{0.26in}}
+  \vspace{0.055in}
+  \hbox to \paperwidth{%
+    \begin{beamercolorbox}[
+      wd=\dimexpr\paperwidth/3\relax,ht=0.22in,dp=0.03in,
+      left,leftskip=0.28in
+    ]{footline}
+      \usebeamerfont{footline}\usebeamercolor[fg]{footline}%
+      \textcolor{LSDeckOffWhite}{\LSShortTitle}
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[
+      wd=\dimexpr\paperwidth/3\relax,ht=0.22in,dp=0.03in,center
+    ]{footline}
+      \usebeamerfont{footline}\usebeamercolor[fg]{footline}%
+      \textcolor{LSDeckOffWhite}{\LSDocumentID\enspace\textbullet\enspace Rev.~\LSRevision}
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[
+      wd=\dimexpr\paperwidth/3\relax,ht=0.22in,dp=0.03in,
+      right,rightskip=0.28in
+    ]{footline}
+      \usebeamerfont{footline}\usebeamercolor[fg]{footline}%
+      \textcolor{LSDeckOffWhite}{\insertframenumber\,/\,\inserttotalframenumber}
+    \end{beamercolorbox}%
+  }
+  \LSIfBlankTF{\LSFrameBannerText}{}{%
+    \ls@bannerbar
+  }%
+}
+
+\newcommand{\ls@titleforegroundbanner}{%
+  \LSIfBlankTF{\LSFrameBannerText}{}{%
+    \LSConfirmAlternateBannerRendered
+    \begin{tikzpicture}[remember picture,overlay]
+      \fill[\LSFrameBannerColor]
+        (current page.north west) rectangle
+        ([yshift=-0.19in]current page.north east);
+      \node[
+        anchor=center,text=white,inner sep=0pt,align=center,
+        text width=\dimexpr\paperwidth-0.20in\relax,
+        font=\sffamily\bfseries\fontsize{8.5}{9.5}\selectfont
+      ] at ([yshift=-0.095in]current page.north) {\LSFrameBannerText};
+    \end{tikzpicture}%
+  }%
+}
+
+% Any marked deck needs the compact title composition even when its notice
+% count is only one or two; the banner itself consumes protected canvas at both
+% edges and the complete cover notice must remain above the footer.
+\newcommand{\ls@ifcompacttitleTF}[2]{%
+  \LSIfDenseMarkingsTF{#1}{%
+    \LSIfBlankTF{\LSFrameBannerText}{#2}{#1}%
+  }%
+}
+
+\setbeamertemplate{title page}{%
+  \begingroup
+  \renewcommand{\ls@backgroundfile}{\LSTitleBackgroundFile}%
+  \ls@requirebackground{\LSTitleBackgroundFile}%
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[anchor=center,inner sep=0] at
+      ([xshift=\LSTitleBackgroundXShift,yshift=\LSTitleBackgroundYShift]current page.center)
+      {\ls@covergraphic{\LSTitleBackgroundFile}};
+    \fill[LSDeckBlack,opacity=\LSTitleBackgroundOverlayOpacity]
+      (current page.south west) rectangle (current page.north east);
+  \end{tikzpicture}
+  \ls@syntheticdemowatermark
+  \ls@titleforegroundbanner
+  \ls@ifcompacttitleTF{%
+    \vspace*{0.19in}
+    \begin{minipage}{0.94\textwidth}
+      \raggedright\hyphenpenalty=10000\exhyphenpenalty=10000
+      \LSWordmarkOnDark[1.05in]\par
+      \vspace{0.10in}
+      {\fontsize{21}{24}\selectfont\bfseries\color{LSDeckWhite}%
+       \pdfrender{TextRenderingMode=FillStroke,LineWidth=0.28pt,
+         StrokeColor=LSDeckBlack}\inserttitle\par}
+      \ifx\insertsubtitle\@empty\else
+        \vspace{0.04in}{\fontsize{10}{12}\selectfont\color{LSDeckOffWhite}%
+          \pdfrender{TextRenderingMode=FillStroke,LineWidth=0.20pt,
+            StrokeColor=LSDeckBlack}\insertsubtitle\par}
+      \fi
+      \vspace{0.07in}
+      {\fontsize{8}{9.5}\selectfont\insertauthor\enspace\textbullet\enspace\insertdate\par}
+      \LSIfBlankTF{\LSTitleBackgroundCreditText}{}{%
+        \vspace{0.035in}{\fontsize{6.8}{8}\selectfont\color{LSDeckOffWhite}
+          \LSTitleBackgroundCreditText\par}%
+      }%
+    \end{minipage}
+    \par\vfill
+    \begin{minipage}{0.94\textwidth}
+      \LSCompactMarkingNotices
+    \end{minipage}
+  }{%
+    \vspace*{0.30in}
+    % Keep the primary message in the quieter left-hand field of the default
+    % full-bleed artwork.  A restrained PDF text stroke preserves contrast on
+    % arbitrary bright backgrounds without dimming or paneling the image.
+    \begin{minipage}{0.60\textwidth}
+      \RaggedRight\hyphenpenalty=10000\exhyphenpenalty=10000
+      \LSWordmarkOnDark[1.05in]\par
+      \vspace{0.34in}
+      {\usebeamerfont{title}\usebeamercolor[fg]{title}%
+       \pdfrender{TextRenderingMode=FillStroke,LineWidth=0.42pt,
+         StrokeColor=LSDeckBlack}\inserttitle\par}
+      \ifx\insertsubtitle\@empty\else
+        \vspace{0.11in}{\usebeamerfont{subtitle}\usebeamercolor[fg]{subtitle}%
+          \pdfrender{TextRenderingMode=FillStroke,LineWidth=0.30pt,
+            StrokeColor=LSDeckBlack}\insertsubtitle\par}
+      \fi
+      \vspace{0.22in}
+      {\usebeamerfont{author}\insertauthor\par}
+      \vspace{0.06in}
+      {\usebeamerfont{date}\insertdate\par}
+      \LSIfBlankTF{\LSTitleBackgroundCreditText}{}{%
+        \vspace{0.05in}{\fontsize{7.5}{9}\selectfont\color{LSDeckOffWhite}
+          \LSTitleBackgroundCreditText\par}%
+      }%
+    \end{minipage}
+    \par\vfill
+    \begin{minipage}{0.94\textwidth}
+      \LSCompactMarkingNotices
+    \end{minipage}
+  }
+  \endgroup
+}
+
+\NewDocumentCommand{\LSSectionSlide}{O{0.40} m m m o}{%
+  \begin{LSImageFrame}[#1]{#2}
+    \vfill
+    {\fontsize{16}{20}\selectfont\bfseries\color{LSDeckLime}\MakeUppercase{#3}\par}
+    \vspace{0.12in}
+    {\fontsize{48}{52}\selectfont\bfseries\color{LSDeckWhite}#4\par}
+    \vfill
+    \IfValueT{#5}{\note{#5}}%
+  \end{LSImageFrame}
+}
+
+\NewDocumentCommand{\LSMetric}{m m}{%
+  \begin{minipage}[t]{0.28\textwidth}
+    \RaggedRight\hyphenpenalty=10000\exhyphenpenalty=10000
+    {\fontsize{42}{46}\selectfont\bfseries\color{LSDeckLime}#1\par}
+    \vspace{0.04in}
+    {\fontsize{16}{20}\selectfont\color{LSDeckOffWhite}#2\par}
+  \end{minipage}%
+}
+
+\NewDocumentCommand{\LSStatement}{m}{%
+  {\leftskip=0pt\relax
+   \rightskip=0pt plus 3em\relax
+   \parfillskip=0pt plus 1fil\relax
+   \tolerance=3000\emergencystretch=2em
+   \hyphenpenalty=10000\exhyphenpenalty=10000%
+   \fontsize{34}{40}\selectfont\bfseries\color{LSDeckWhite}#1\par}%
+}
+
+% --------------------------------------------------------------------------
+% Reusable investor/customer narrative components
+% --------------------------------------------------------------------------
+
+\NewDocumentEnvironment{LSBullets}{O{0.13in} +b}{%
+  \begingroup
+  \fontsize{18}{23}\selectfont
+  \begin{itemize}
+    \setlength{\itemsep}{#1}%
+    #2
+  \end{itemize}
+  \endgroup
+}{}
+
+\NewDocumentCommand{\LSDecisionSlide}{m m +m m +m +m}{%
+  \begin{frame}{#1}
+    \begin{columns}[T,onlytextwidth]
+      \begin{column}{0.46\textwidth}
+        {\fontsize{22}{26}\selectfont\bfseries\color{LSDeckLime}#2\par}
+        \vspace{0.12in}
+        {\fontsize{17}{22}\selectfont\RaggedRight #3\par}
+      \end{column}
+      \begin{column}{0.46\textwidth}
+        {\fontsize{22}{26}\selectfont\bfseries\color{LSDeckGreen}#4\par}
+        \vspace{0.12in}
+        {\fontsize{17}{22}\selectfont\RaggedRight #5\par}
+      \end{column}
+    \end{columns}
+    \vfill
+    \begin{beamercolorbox}[sep=0.13in,rounded=true]{block body}
+      {\fontsize{17}{22}\selectfont\bfseries\color{LSDeckWhite}#6\par}
+    \end{beamercolorbox}
+  \end{frame}
+}
+
+\NewDocumentCommand{\LSQuoteSlide}{O{} +m m m}{%
+  \begingroup
+  \edef\ls@quotebackground{\ls@resolvebackground{#1}}%
+  \ifdefempty{\ls@quotebackground}{}{%
+    \ls@requirebackground{\ls@quotebackground}%
+    \edef\ls@backgroundfile{\ls@quotebackground}%
+    \def\ls@backgroundopacity{0.60}%
+  }%
+  \begin{frame}
+    \vfill
+    {\fontsize{54}{54}\selectfont\bfseries\color{LSDeckLime}``\par}
+    \vspace{-0.28in}
+    {\fontsize{29}{36}\selectfont\bfseries\color{LSDeckWhite}\RaggedRight #2\par}
+    \vspace{0.24in}
+    {\fontsize{17}{21}\selectfont\bfseries\color{LSDeckLime}#3\par}
+    {\fontsize{14}{18}\selectfont\color{LSDeckOffWhite}#4\par}
+    \vfill
+  \end{frame}
+  \endgroup
+}
+
+\NewDocumentCommand{\LSClosingSlide}{O{webb-clouds} m m m}{%
+  \begin{LSBackgroundFrame}[opacity=0.54]{#1}
+    \vfill
+    \LSStatement{#2}
+    \vspace{0.23in}
+    {\fontsize{21}{26}\selectfont\bfseries\color{LSDeckLime}#3\par}
+    \vspace{0.09in}
+    {\fontsize{15}{19}\selectfont\color{LSDeckOffWhite}#4\par}
+    \vfill
+  \end{LSBackgroundFrame}
+}
+
+% --------------------------------------------------------------------------
+% Team slides: collect two to four members, then lay out equal rounded cards.
+% A blank photo path uses the optional initials argument as a neutral placeholder.
+% --------------------------------------------------------------------------
+
+\pgfkeys{
+  /ls/team-slide/.is family,
+  /ls/team-slide,
+  background/.store in=\ls@teambackground,
+  overlay/.store in=\ls@teamoverlay,
+  focal-x/.store in=\ls@teamxshift,
+  focal-y/.store in=\ls@teamyshift,
+  eyebrow/.store in=\ls@teameyebrow,
+  media/.store in=\ls@teammedia,
+  media-side/.is choice,
+  media-side/left/.code={\def\ls@teammediaside{left}},
+  media-side/right/.code={\def\ls@teammediaside{right}},
+}
+
+\newcommand{\ls@roundedimage}[3]{%
+  \begingroup
+  \edef\ls@roundedimagefile{\ls@resolvebackground{#1}}%
+  \ls@requirebackground{\ls@roundedimagefile}%
+  \begin{tikzpicture}
+    \path[use as bounding box] (0,0) rectangle (#2,#3);
+    \clip[rounded corners=0.10in] (0,0) rectangle (#2,#3);
+    \node[anchor=center,inner sep=0] at ($(0,0)!0.5!(#2,#3)$)
+      {\ls@covergraphicbox{\ls@roundedimagefile}{#2}{#3}};
+  \end{tikzpicture}%
+  \endgroup
+}
+
+\newcommand{\ls@teamplaceholder}[2]{%
+  \begin{tikzpicture}
+    \path[use as bounding box] (0,0) rectangle (#1,#2);
+    \node[
+      anchor=center,fill=LSDeckBlack!72,text=LSDeckLime,
+      rounded corners=0.10in,minimum width=#1,minimum height=#2,
+      inner sep=0pt,font=\bfseries\fontsize{25}{25}\selectfont
+    ] at ($(0,0)!0.5!(#1,#2)$) {\ls@teaminitials};
+  \end{tikzpicture}%
+}
+
+\newcommand{\ls@teamcard}[5]{%
+  \begin{tikzpicture}[baseline=0pt]
+    \node[
+      anchor=north west,fill=LSDeckCharcoal!94,draw=LSDeckRule!58,
+      line width=0.55pt,rounded corners=0.13in,inner sep=0.13in,
+      text width=\dimexpr\ls@teamcardwidth-0.26in\relax,
+      minimum height=3.02in
+    ] (card) at (0,0) {%
+      \centering
+      \def\ls@teaminitials{#1}%
+      \ifstrempty{#2}
+        {\ls@teamplaceholder{\linewidth}{\ls@teamphotoheight}}
+        {\ls@roundedimage{#2}{\linewidth}{\ls@teamphotoheight}}%
+      \par\vspace{0.10in}
+      {\fontsize{\ls@teamnamesize}{\ls@teamnameleading}\selectfont
+       \bfseries\color{LSDeckLime}#3\par}
+      \vspace{0.025in}
+      {\fontsize{13}{16}\selectfont\bfseries\color{LSDeckWhite}#4\par}
+      \vspace{0.055in}
+      {\fontsize{12.5}{15.5}\selectfont\color{LSDeckOffWhite}\RaggedRight #5\par}
+    };
+    \path[use as bounding box] (0,-3.08in) rectangle (\ls@teamcardwidth,0);
+  \end{tikzpicture}%
+}
+
+\newcommand{\ls@teammediapanel}{%
+  \ls@roundedimage{\ls@teammedia}{\ls@teammediawidth}{3.02in}%
+}
+
+\ExplSyntaxOn
+\seq_new:N \l_ls_team_members_seq
+\bool_new:N \l_ls_team_collecting_bool
+\int_new:N \l_ls_team_count_int
+\dim_new:N \l_ls_team_area_width_dim
+\dim_new:N \l_ls_team_card_width_dim
+
+\msg_new:nnnn {beamerthemeLinearSpace}{team-outside}
+  {\string\LSTeamMember~was~used~outside~an~LSTeamSlide.}
+  {Place~two~to~four~member~commands~inside~the~slide~environment.}
+\msg_new:nnnn {beamerthemeLinearSpace}{team-count}
+  {An~LSTeamSlide~contains~#1~members.}
+  {Use~two,~three,~or~four~\string\LSTeamMember~commands.}
+
+\NewDocumentCommand{\LSTeamMember}{O{LS} m m m +m}
+  {
+    \bool_if:NTF \l_ls_team_collecting_bool
+      {\seq_put_right:Nn \l_ls_team_members_seq
+        {\ls@teamcard{#1}{#2}{#3}{#4}{#5}}}
+      {\msg_fatal:nn {beamerthemeLinearSpace}{team-outside}}
+  }
+
+\cs_new_protected:Npn \ls_team_cards:
+  {
+    \hbox_to_wd:nn {\l_ls_team_area_width_dim}
+      {\seq_map_indexed_function:NN \l_ls_team_members_seq \ls_team_card_indexed:nn}
+  }
+
+\cs_new_protected:Npn \ls_team_card_indexed:nn #1#2
+  {#2\int_compare:nNnT {#1} < {\l_ls_team_count_int}{\hfil}}
+
+\cs_new_protected:Npn \ls_team_render:
+  {
+    \int_set:Nn \l_ls_team_count_int {\seq_count:N \l_ls_team_members_seq}
+    \int_compare:nNnTF {\l_ls_team_count_int} < {2}
+      {\msg_fatal:nne {beamerthemeLinearSpace}{team-count}{\int_use:N \l_ls_team_count_int}}
+      {
+        \int_compare:nNnT {\l_ls_team_count_int} > {4}
+          {\msg_fatal:nne {beamerthemeLinearSpace}{team-count}{\int_use:N \l_ls_team_count_int}}
+      }
+    \dim_set:Nn \l_ls_team_area_width_dim {\linewidth}
+    \def\ls@teammediawidth{1.47in}
+    \tl_if_blank:eF {\ls@teammedia}
+      {\dim_sub:Nn \l_ls_team_area_width_dim {1.65in}}
+    \dim_set_eq:NN \l_ls_team_card_width_dim \l_ls_team_area_width_dim
+    \dim_sub:Nn \l_ls_team_card_width_dim
+      {0.13in * \int_eval:n {\l_ls_team_count_int - 1}}
+    \dim_set:Nn \l_ls_team_card_width_dim
+      {\l_ls_team_card_width_dim / \l_ls_team_count_int}
+    \edef\ls@teamcardwidth{\dim_use:N \l_ls_team_card_width_dim}
+    \int_compare:nNnTF {\l_ls_team_count_int} = {2}
+      {
+        \def\ls@teamphotoheight{1.15in}
+        \def\ls@teamnamesize{21}
+        \def\ls@teamnameleading{24}
+      }
+      {
+        \def\ls@teamphotoheight{0.92in}
+        \def\ls@teamnamesize{18}
+        \def\ls@teamnameleading{21}
+      }
+    \edef\ls@backgroundfile{\ls@resolvebackground{\ls@teambackground}}
+    \tl_if_blank:eF {\ls@backgroundfile}{\ls@requirebackground{\ls@backgroundfile}}
+    \edef\ls@backgroundopacity{\ls@teamoverlay}
+    \edef\ls@backgroundxshift{\ls@teamxshift}
+    \edef\ls@backgroundyshift{\ls@teamyshift}
+    \begin{frame}[t]{\ls@teamtitle}
+      \tl_if_blank:eF {\ls@teameyebrow}
+        {{\fontsize{13}{16}\selectfont\bfseries\color{LSDeckLime}
+          \MakeUppercase{\ls@teameyebrow}\par\vspace{0.10in}}}
+      \noindent
+      \tl_if_blank:eTF {\ls@teammedia}
+        {\ls_team_cards:}
+        {
+          \str_if_eq:eeTF {\ls@teammediaside}{left}
+            {\ls@teammediapanel\hfill\ls_team_cards:}
+            {\ls_team_cards:\hfill\ls@teammediapanel}
+        }
+    \end{frame}
+  }
+
+\NewDocumentEnvironment{LSTeamSlide}{O{} m +b}
+  {
+    \group_begin:
+      \seq_clear:N \l_ls_team_members_seq
+      \bool_set_true:N \l_ls_team_collecting_bool
+      \def\ls@teambackground{}
+      \def\ls@teamoverlay{0.52}
+      \def\ls@teamxshift{0in}
+      \def\ls@teamyshift{0in}
+      \def\ls@teameyebrow{Team}
+      \def\ls@teammedia{}
+      \def\ls@teammediaside{left}
+      \def\ls@teamtitle{#2}
+      \pgfkeys{/ls/team-slide,#1}
+      #3
+      \bool_set_false:N \l_ls_team_collecting_bool
+      \ls_team_render:
+    \group_end:
+  }
+  {}
+\ExplSyntaxOff
+
+% --------------------------------------------------------------------------
+% Milestone slides: one to ten stages, at most five per centered row.
+% --------------------------------------------------------------------------
+
+\pgfkeys{
+  /ls/milestone-slide/.is family,
+  /ls/milestone-slide,
+  background/.store in=\ls@milestonebackground,
+  overlay/.store in=\ls@milestoneoverlay,
+  focal-x/.store in=\ls@milestonexshift,
+  focal-y/.store in=\ls@milestoneyshift,
+  eyebrow/.store in=\ls@milestoneeyebrow,
+  /ls/milestone/.is family,
+  /ls/milestone,
+  status/.is choice,
+  status/completed/.code={\def\ls@milestonestatus{completed}},
+  status/in-progress/.code={\def\ls@milestonestatus{in-progress}},
+  status/upcoming/.code={\def\ls@milestonestatus{upcoming}},
+  accent/.store in=\ls@milestoneaccent,
+}
+
+\ExplSyntaxOn
+\seq_new:N \l_ls_milestone_seq
+\bool_new:N \l_ls_milestone_collecting_bool
+\int_new:N \l_ls_milestone_count_int
+\int_new:N \l_ls_milestone_index_int
+\int_new:N \l_ls_milestone_row_count_int
+\int_new:N \l_ls_milestone_row_index_int
+\dim_new:N \l_ls_milestone_card_width_dim
+\dim_new:N \l_ls_milestone_position_dim
+\dim_new:N \l_ls_milestone_step_dim
+\dim_new:N \l_ls_milestone_row_y_dim
+\dim_new:N \l_ls_milestone_connector_left_dim
+\dim_new:N \l_ls_milestone_connector_right_dim
+\dim_new:N \l_ls_milestone_wrap_start_dim
+\dim_new:N \l_ls_milestone_wrap_end_dim
+\dim_new:N \l_ls_milestone_wrap_left_rail_dim
+\dim_new:N \l_ls_milestone_wrap_right_rail_dim
+\bool_new:N \l_ls_milestone_compact_bool
+
+\msg_new:nnnn {beamerthemeLinearSpace}{milestone-outside}
+  {\string\LSMilestone~was~used~outside~an~LSMilestoneSlide.}
+  {Place~one~to~ten~milestone~commands~inside~the~slide~environment.}
+\msg_new:nnnn {beamerthemeLinearSpace}{milestone-count}
+  {An~LSMilestoneSlide~contains~#1~milestones.}
+  {Use~one~to~ten~\string\LSMilestone~commands.}
+
+\NewDocumentCommand{\LSMilestone}{O{} m m +m m}
+  {
+    \bool_if:NTF \l_ls_milestone_collecting_bool
+      {\seq_put_right:Nn \l_ls_milestone_seq
+        {\ls_milestone_node:nnnnn {#1}{#2}{#3}{#4}{#5}}}
+      {\msg_fatal:nn {beamerthemeLinearSpace}{milestone-outside}}
+  }
+
+\cs_new_protected:Npn \ls_milestone_node:nnnnn #1#2#3#4#5
+  {
+    \group_begin:
+      \def\ls@milestonestatus{upcoming}
+      \def\ls@milestoneaccent{LSDeckLime}
+      \pgfkeys{/ls/milestone,status=upcoming,accent=LSDeckLime,#1}
+      \bool_if:NTF \l_ls_milestone_compact_bool
+        {
+          \int_compare:nNnTF {\l_ls_milestone_index_int} < {6}
+            {
+              \int_set:Nn \l_ls_milestone_row_count_int {5}
+              \int_set_eq:NN \l_ls_milestone_row_index_int
+                \l_ls_milestone_index_int
+              \dim_set:Nn \l_ls_milestone_row_y_dim {0.75in}
+            }
+            {
+              \int_set:Nn \l_ls_milestone_row_count_int
+                {\l_ls_milestone_count_int - 5}
+              \int_set:Nn \l_ls_milestone_row_index_int
+                {\l_ls_milestone_index_int - 5}
+              \dim_set:Nn \l_ls_milestone_row_y_dim {-1.28in}
+            }
+        }
+        {
+          \int_set_eq:NN \l_ls_milestone_row_count_int
+            \l_ls_milestone_count_int
+          \int_set_eq:NN \l_ls_milestone_row_index_int
+            \l_ls_milestone_index_int
+          \dim_zero:N \l_ls_milestone_row_y_dim
+        }
+      \dim_set:Nn \l_ls_milestone_position_dim
+        {
+          \linewidth / 2
+          + \l_ls_milestone_step_dim
+            * (2 * \l_ls_milestone_row_index_int
+               - \l_ls_milestone_row_count_int - 1) / 2
+        }
+      \def\ls@milestonenodefill{LSDeckCharcoal}
+      \def\ls@milestonenodedraw{LSDeckRule}
+      \def\ls@milestonenodetext{\ls@milestoneaccent}
+      \def\ls@milestonetitlecolor{LSDeckOffWhite}
+      \def\ls@milestonedatefill{LSDeckCharcoal}
+      \def\ls@milestonedatedraw{LSDeckRule}
+      \def\ls@milestonedatetext{\ls@milestoneaccent}
+      \def\ls@milestonedateprefix{}
+      \def\ls@milestonenodeline{0.7pt}
+      \ifdefstring{\ls@milestonestatus}{completed}{
+        \def\ls@milestonenodefill{\ls@milestoneaccent}
+        \def\ls@milestonenodedraw{\ls@milestoneaccent}
+        \def\ls@milestonenodetext{LSDeckBlack}
+        \def\ls@milestonetitlecolor{\ls@milestoneaccent}
+        \def\ls@milestonedatefill{\ls@milestoneaccent}
+        \def\ls@milestonedatedraw{\ls@milestoneaccent}
+        \def\ls@milestonedatetext{LSDeckBlack}
+        \def\ls@milestonedateprefix{COMPLETE\enspace\textbullet\enspace}
+      }{}
+      \ifdefstring{\ls@milestonestatus}{in-progress}{
+        \def\ls@milestonenodedraw{\ls@milestoneaccent}
+        \def\ls@milestonenodetext{\ls@milestoneaccent}
+        \def\ls@milestonetitlecolor{\ls@milestoneaccent}
+        \def\ls@milestonedatefill{LSDeckBlack}
+        \def\ls@milestonedatedraw{\ls@milestoneaccent}
+        \def\ls@milestonedatetext{\ls@milestoneaccent}
+        \def\ls@milestonedateprefix{IN~PROGRESS\enspace\textbullet\enspace}
+        \def\ls@milestonenodeline{2.0pt}
+      }{}
+      \begin{scope}[shift={(\dim_use:N \l_ls_milestone_position_dim,
+                            \dim_use:N \l_ls_milestone_row_y_dim)}]
+        \ifdefstring{\ls@milestonestatus}{completed}{
+          \node[
+            circle,fill=\ls@milestonenodefill,text=\ls@milestonenodetext,
+            minimum~size=\ls@milestonemarkersize,inner~sep=0pt,
+            font=\bfseries\fontsize{\ls@milestonemarkersizefont}
+              {\ls@milestonemarkersizefont}\selectfont
+          ] at (0,0) {#2};
+        }{
+          \node[
+            fill=\ls@milestonenodefill,draw=\ls@milestonenodedraw,
+            text=\ls@milestonenodetext,line~width=\ls@milestonenodeline,
+            rounded~corners=\ls@milestonecornerradius,
+            minimum~width=\ls@milestonemarkersize,
+            minimum~height=\ls@milestonemarkersize,inner~sep=0pt,
+            font=\bfseries\fontsize{\ls@milestonemarkersizefont}
+              {\ls@milestonemarkersizefont}\selectfont
+          ] at (0,0) {#2};
+          \ifdefstring{\ls@milestonestatus}{in-progress}{
+            \fill[\ls@milestoneaccent]
+              (\ls@milestoneactivityoffset,\ls@milestoneactivityoffset)
+              circle[radius=\ls@milestoneactivityradius];
+          }{}
+        }
+      \end{scope}
+      \node[
+        anchor=north,inner~sep=0pt,align=center,
+        text~width=\dim_eval:n {\l_ls_milestone_card_width_dim - 0.04in}
+      ] at (\dim_use:N \l_ls_milestone_position_dim,
+            \dim_eval:n
+              {\l_ls_milestone_row_y_dim - \ls@milestonecontentoffset})
+      {
+        \begin{minipage}{\dim_eval:n {\l_ls_milestone_card_width_dim - 0.04in}}
+          \centering
+          \begin{minipage}[t][\ls@milestonetitleslot][t]
+            {\dim_eval:n {\l_ls_milestone_card_width_dim - 0.04in}}
+            \centering
+            {\fontsize{\ls@milestonetitlesize}{\ls@milestonetitleleading}
+             \selectfont\bfseries
+             \color{\ls@milestonetitlecolor}#3\par}
+          \end{minipage}\par
+          \vspace{\ls@milestonetitlegap}
+          \begin{minipage}[t][\ls@milestonebodyslot][t]
+            {\dim_eval:n {\l_ls_milestone_card_width_dim - 0.04in}}
+            \centering
+            {\fontsize{\ls@milestonebodysize}{\ls@milestonebodyleading}
+             \selectfont\color{LSDeckOffWhite}#4\par}
+          \end{minipage}\par
+          \vspace{\ls@milestonedategap}
+          \begingroup
+            \setlength{\fboxsep}{\ls@milestonedatepadding}
+            \setlength{\fboxrule}{0.8pt}
+            \fcolorbox{\ls@milestonedatedraw}{\ls@milestonedatefill}{%
+              \makebox[\dim_eval:n
+                {\l_ls_milestone_card_width_dim - \ls@milestonedateinset}][c]{%
+                \strut\bfseries
+                \fontsize{\ls@milestonedatesize}{\ls@milestonedateleading}
+                \selectfont
+                \color{\ls@milestonedatetext}\ls@milestonedateprefix#5}}
+          \endgroup
+        \end{minipage}
+      };
+    \group_end:
+  }
+
+\cs_new_protected:Npn \ls_milestone_connector:nn #1#2
+  {
+    \int_compare:nNnT {#1} > {1}
+      {
+        \dim_set:Nn \l_ls_milestone_connector_left_dim
+          {\linewidth / 2 - \l_ls_milestone_step_dim * (#1 - 1) / 2}
+        \dim_set:Nn \l_ls_milestone_connector_right_dim
+          {\linewidth / 2 + \l_ls_milestone_step_dim * (#1 - 1) / 2}
+        \draw[LSDeckLime!82,line~width=1.15pt,densely~dotted]
+          (\dim_use:N \l_ls_milestone_connector_left_dim,#2) --
+          (\dim_use:N \l_ls_milestone_connector_right_dim,#2);
+      }
+  }
+
+% Continue the sequence from gate 5 to gate 6 without crossing either row's
+% content.  The rails live in the frame's protected side gutters and the long
+% horizontal segment uses a dedicated channel between the two complete rows.
+% Gate 6's x coordinate is derived from the centered active second row.
+\cs_new_protected:Npn \ls_milestone_wrap_connector:
+  {
+    \dim_set:Nn \l_ls_milestone_wrap_start_dim
+      {\linewidth / 2 + \l_ls_milestone_step_dim * 2
+        + \ls@milestonemarkersize / 2}
+    \dim_set:Nn \l_ls_milestone_wrap_end_dim
+      {\linewidth / 2
+        - \l_ls_milestone_step_dim
+          * (\l_ls_milestone_count_int - 6) / 2
+        - \ls@milestonemarkersize / 2}
+    \dim_set:Nn \l_ls_milestone_wrap_left_rail_dim {-0.10in}
+    \dim_set:Nn \l_ls_milestone_wrap_right_rail_dim
+      {\linewidth + 0.10in}
+    \draw[
+      LSDeckLime!82,line~width=1.15pt,densely~dotted,
+      line~cap=round,line~join=round,rounded~corners=0.10in
+    ]
+      (\dim_use:N \l_ls_milestone_wrap_start_dim,0.75in) --
+      (\dim_use:N \l_ls_milestone_wrap_right_rail_dim,0.75in) --
+      (\dim_use:N \l_ls_milestone_wrap_right_rail_dim,-0.93in) --
+      (\dim_use:N \l_ls_milestone_wrap_left_rail_dim,-0.93in) --
+      (\dim_use:N \l_ls_milestone_wrap_left_rail_dim,-1.28in) --
+      (\dim_use:N \l_ls_milestone_wrap_end_dim,-1.28in);
+  }
+
+\cs_new_protected:Npn \ls_milestone_render:
+  {
+    \int_set:Nn \l_ls_milestone_count_int {\seq_count:N \l_ls_milestone_seq}
+    \int_compare:nNnTF {\l_ls_milestone_count_int} < {1}
+      {\msg_fatal:nne {beamerthemeLinearSpace}{milestone-count}{\int_use:N \l_ls_milestone_count_int}}
+      {
+        \int_compare:nNnT {\l_ls_milestone_count_int} > {10}
+          {\msg_fatal:nne {beamerthemeLinearSpace}{milestone-count}{\int_use:N \l_ls_milestone_count_int}}
+      }
+    \bool_set:Nn \l_ls_milestone_compact_bool
+      {\int_compare_p:nNn {\l_ls_milestone_count_int} > {5}}
+    \bool_if:NTF \l_ls_milestone_compact_bool
+      {
+        \dim_set:Nn \l_ls_milestone_card_width_dim
+          {(\linewidth - 0.56in) / 5}
+        \def\ls@milestonemarkersize{0.35in}
+        \def\ls@milestonemarkersizefont{11}
+        \def\ls@milestonecornerradius{0.075in}
+        \def\ls@milestoneactivityoffset{0.145in}
+        \def\ls@milestoneactivityradius{0.027in}
+        \def\ls@milestonecontentoffset{0.28in}
+        \def\ls@milestonetitlesize{11.2}
+        \def\ls@milestonetitleleading{13.0}
+        \def\ls@milestonetitleslot{0.38in}
+        \def\ls@milestonetitlegap{0.025in}
+        \def\ls@milestonebodysize{9.2}
+        \def\ls@milestonebodyleading{11.1}
+        \def\ls@milestonebodyslot{0.48in}
+        \def\ls@milestonedategap{0.045in}
+        \def\ls@milestonedatepadding{2.5pt}
+        \def\ls@milestonedateinset{0.18in}
+        \def\ls@milestonedatesize{7.2}
+        \def\ls@milestonedateleading{8.6}
+      }
+      {
+        \dim_set:Nn \l_ls_milestone_card_width_dim
+          {(\linewidth - 0.14in * (\l_ls_milestone_count_int - 1))
+            / \l_ls_milestone_count_int}
+        \dim_compare:nNnT {\l_ls_milestone_card_width_dim} > {3.15in}
+          {\dim_set:Nn \l_ls_milestone_card_width_dim {3.15in}}
+        \def\ls@milestonemarkersize{0.48in}
+        \def\ls@milestonemarkersizefont{15}
+        \def\ls@milestonecornerradius{0.10in}
+        \def\ls@milestoneactivityoffset{0.205in}
+        \def\ls@milestoneactivityradius{0.037in}
+        \def\ls@milestonecontentoffset{0.39in}
+        \def\ls@milestonetitlesize{15.5}
+        \def\ls@milestonetitleleading{18.5}
+        \def\ls@milestonetitleslot{0.56in}
+        \def\ls@milestonetitlegap{0.065in}
+        \def\ls@milestonebodysize{12.8}
+        \def\ls@milestonebodyleading{15.8}
+        \def\ls@milestonebodyslot{0.70in}
+        \def\ls@milestonedategap{0.11in}
+        \def\ls@milestonedatepadding{4.4pt}
+        \def\ls@milestonedateinset{0.26in}
+        \def\ls@milestonedatesize{9.7}
+        \def\ls@milestonedateleading{11.5}
+      }
+    \dim_set:Nn \l_ls_milestone_step_dim
+      {\l_ls_milestone_card_width_dim + 0.14in}
+    \edef\ls@backgroundfile{\ls@resolvebackground{\ls@milestonebackground}}
+    \tl_if_blank:eF {\ls@backgroundfile}{\ls@requirebackground{\ls@backgroundfile}}
+    \edef\ls@backgroundopacity{\ls@milestoneoverlay}
+    \edef\ls@backgroundxshift{\ls@milestonexshift}
+    \edef\ls@backgroundyshift{\ls@milestoneyshift}
+    \bool_if:NT \l_ls_milestone_compact_bool
+      {\setbeamerfont{frametitle}{size=\fontsize{35}{38},series=\bfseries}}
+    \begin{frame}[t]{\ls@milestonetitle}
+      \tl_if_blank:eF {\ls@milestoneeyebrow}
+        {\bool_if:NTF \l_ls_milestone_compact_bool
+          {{\fontsize{11.5}{13.5}\selectfont\bfseries\color{LSDeckLime}
+            \MakeUppercase{\ls@milestoneeyebrow}\par\vspace{0.07in}}}
+          {{\fontsize{13}{16}\selectfont\bfseries\color{LSDeckLime}
+            \MakeUppercase{\ls@milestoneeyebrow}\par\vspace{0.16in}}}}
+      \centering
+      \begin{tikzpicture}
+        \bool_if:NTF \l_ls_milestone_compact_bool
+          {
+            \path[use~as~bounding~box]
+              (0,-2.88in) rectangle (\linewidth,0.96in);
+            \ls_milestone_connector:nn {5}{0.75in}
+            \ls_milestone_connector:nn
+              {\int_eval:n {\l_ls_milestone_count_int - 5}}{-1.28in}
+            \ls_milestone_wrap_connector:
+          }
+          {
+            \path[use~as~bounding~box]
+              (0,-2.62in) rectangle (\linewidth,0.27in);
+            \ls_milestone_connector:nn
+              {\l_ls_milestone_count_int}{0in}
+          }
+        \seq_map_indexed_function:NN
+          \l_ls_milestone_seq \ls_milestone_indexed:nn
+      \end{tikzpicture}
+    \end{frame}
+  }
+
+\cs_new_protected:Npn \ls_milestone_indexed:nn #1#2
+  {\int_set:Nn \l_ls_milestone_index_int {#1} #2}
+
+\NewDocumentEnvironment{LSMilestoneSlide}{O{} m +b}
+  {
+    \group_begin:
+      \seq_clear:N \l_ls_milestone_seq
+      \bool_set_true:N \l_ls_milestone_collecting_bool
+      \def\ls@milestonebackground{}
+      \def\ls@milestoneoverlay{0}
+      \def\ls@milestonexshift{0in}
+      \def\ls@milestoneyshift{0in}
+      \def\ls@milestoneeyebrow{Roadmap}
+      \def\ls@milestonetitle{#2}
+      \pgfkeys{/ls/milestone-slide,#1}
+      #3
+      \bool_set_false:N \l_ls_milestone_collecting_bool
+      \ls_milestone_render:
+    \group_end:
+  }
+  {}
+\ExplSyntaxOff
+
+% Acronym and bibliography frames are deliberately separate: readers can scan
+% terminology quickly, while source lists can break across as many slides as
+% needed.  The references helper fails clearly unless biblatex was loaded.
+\renewcommand{\LSAcronymShortStyle}[1]{\textbf{\color{LSDeckLime}#1}}
+\renewcommand{\LSAcronymLongStyle}[1]{\color{LSDeckOffWhite}#1}
+\NewDocumentCommand{\LSAcronymFrame}{O{Acronyms and abbreviations}}{%
+  \begingroup
+  \setbeamertemplate{frametitle continuation}{%
+    \ifnum\insertcontinuationcount>1\relax\space(continued)\fi
+  }%
+  \begin{frame}[t,allowframebreaks=0.88]{#1}
+    \vspace{0.06in}
+    {\fontsize{16}{20}\selectfont\LSPrintAcronyms}
+  \end{frame}
+  \endgroup
+}
+
+\NewDocumentCommand{\LSReferencesFrame}{O{References}}{%
+  \@ifpackageloaded{biblatex}{%
+    \begingroup
+    \setbeamertemplate{frametitle continuation}{%
+      \ifnum\insertcontinuationcount>1\relax\space(continued)\fi
+    }%
+    \setbeamerfont{bibliography item}{size=\fontsize{13.5}{17}}
+    \setbeamerfont{bibliography entry author}{size=\fontsize{13.5}{17},series=\bfseries}
+    \setbeamerfont{bibliography entry title}{size=\fontsize{13.5}{17}}
+    \setbeamerfont{bibliography entry location}{size=\fontsize{12.5}{16}}
+    \setbeamerfont{bibliography entry note}{size=\fontsize{12.5}{16}}
+    \begin{frame}[t,allowframebreaks=0.88]{#1}
+      \printbibliography[heading=none]
+    \end{frame}
+    \endgroup
+  }{%
+    \PackageError{beamerthemeLinearSpace}
+      {\string\LSReferencesFrame\space requires biblatex}
+      {Load biblatex and add one or more bibliography resources in the preamble.}%
+  }%
+}
+
+% Optional expanded duplicate for audiences that benefit from a dedicated
+% handling slide. The title frame already carries every required cover notice.
+\NewDocumentCommand{\LSMarkingDisclosureFrame}{}{%
+  \begingroup
+    \setbeamertemplate{frametitle continuation}{%
+      \ifnum\insertcontinuationcount>1\relax\space(continued)\fi
+    }%
+    \renewcommand{\small}{\fontsize{13}{16}\selectfont}%
+    \LSIfDoDExportTechnicalInformationTF{%
+      \begin{frame}[t,allowframebreaks=0.88]{DoDD 5230.25 notice}
+        \vspace{0.06in}
+        \LSDoDReleaseNotice
+      \end{frame}%
+    }{%
+      \begin{frame}[t,allowframebreaks=0.88]{Handling, authority, and distribution}
+        \vspace{0.06in}
+        \LSMarkingNotices
+      \end{frame}%
+    }%
+  \endgroup
+}
+
+\mode<all>
+\endinput

@@ -1,0 +1,10 @@
+% Expected failure before shipout: the unclassified profile banner is exact.
+\documentclass[letterpaper]{article}
+\usepackage{linearspace-markings}
+\LSMarkingSetup{
+  profile=unclassified,
+  classification=none,
+  controls={},
+  banner-text={UNCLASSIFIED//CUI}
+}
+\begin{document}This content must never render.\end{document}

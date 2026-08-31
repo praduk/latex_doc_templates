@@ -1,0 +1,43 @@
+% !TeX program = lualatex
+\documentclass[aspectratio=169,professionalfonts]{beamer}
+\usetheme{LinearSpace}
+
+\LSSetup{
+  title={Corporate Presentation Smoke Test},
+  subtitle={Controlled-banner, disclosure, and layout verification},
+  short-title={Corporate Smoke},
+  author={Linear Space},
+  organization={Linear Space},
+  document-id={LS-TEST-PRES-0001},
+  revision={A},
+  status={Test},
+  date={2026-08-30}
+}
+
+\LSMarkingSetup{
+  profile=corporate,
+  classification=none,
+  controls={proprietary}
+}
+
+\title{\LSTitle}
+\subtitle{\LSSubtitle}
+\author{\LSAuthor}
+\date{\LSDate}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\LSMarkingDisclosureFrame
+
+\begin{frame}{Frame-title margin and banner smoke test}
+  \vfill
+  \LSStatement{A controlled slide should preserve its margins, remain readable,
+  and repeat the exact authorized banner at equal height.}
+  \vfill
+\end{frame}
+
+\end{document}

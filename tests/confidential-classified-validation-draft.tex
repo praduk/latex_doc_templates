@@ -1,0 +1,31 @@
+% Synthetic marking-system test. Run with LuaLaTeX -draftmode only.
+% This file contains no classified or controlled information and is not classification authority.
+\documentclass[letterpaper]{article}
+\usepackage{linearspace-markings}
+\LSMarkingSetup{
+  profile=classified-general,
+  classification=confidential,
+  controls={cui},
+  operator-confirms-controlled-environment=true,
+  operator-confirms-classified-environment=true,
+  banner-text={CONFIDENTIAL//CUI},
+  controlled-by={Synthetic Test Authority},
+  cui-categories={Synthetic Category},
+  control-poc={test@example.invalid},
+  authority-type=derivative,
+  classified-by={Synthetic Test Classifier},
+  derived-from={Synthetic Test Security Classification Guide},
+  declassify-on={30 AUG 2036}
+}
+\begin{document}
+\ExplSyntaxOn
+\tl_set:Nx \l_tmpa_tl {\LSBannerText}
+\tl_if_eq:NnF \l_tmpa_tl {CONFIDENTIAL//CUI}
+  {\PackageError{linearspace-test}{CONFIDENTIAL+CUI~banner~regression}{}}
+\tl_set:Nx \l_tmpa_tl {\LSBannerColor}
+\tl_if_eq:NnF \l_tmpa_tl {LSBlue}
+  {\PackageError{linearspace-test}{CONFIDENTIAL~banner-color~regression}{}}
+\ExplSyntaxOff
+\LSMarkingNotices
+\LSC{Synthetic Confidential portion-mark renderer test; not classified.}
+\end{document}

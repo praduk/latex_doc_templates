@@ -1,0 +1,228 @@
+% !TeX program = lualatex
+\documentclass{linearspace-report}
+
+\usepackage[backend=biber,style=numeric-comp,sorting=none]{biblatex}
+\addbibresource{templates/shared-data/references.bib}
+
+\LSSetup{
+  title={Engineering Analysis and Verification Report},
+  subtitle={A professional template for mathematical design documentation},
+  short-title={Engineering Analysis Report},
+  author={Engineering Team},
+  organization={Linear Space},
+  document-id={LS-ENG-0001},
+  revision={A},
+  status={Draft for Review},
+  date={\today},
+  project={Example Spacecraft Subsystem},
+  client={Internal Template Demonstration}
+}
+
+% Safe default: this repository contains no controlled information. See
+% docs/MARKINGS.md before enabling any controlled or classified profile.
+\LSMarkingSetup{
+  profile=uncontrolled,
+  classification=none,
+  controls={},
+}
+
+\begin{document}
+
+\pagenumbering{roman}
+\LSMakeReportTitle
+
+\begin{LSRevisionHistory}
+  A & 2026-08-30 & Engineering Team & Initial template release. \\
+\end{LSRevisionHistory}
+
+\chapter*{Executive Summary}
+\addcontentsline{toc}{chapter}{Executive Summary}
+This document demonstrates the intended structure for engineering analyses,
+design descriptions, interface documents, verification reports, and manuals.
+The numerical values and data are synthetic; replace them with traceable
+project evidence.
+
+\begin{LSKeyPoint}[Decision-ready conclusion]
+State the engineering conclusion first, quantify its margin, identify the
+limiting assumption, and name the evidence required to close any residual risk.
+\end{LSKeyPoint}
+
+\tableofcontents
+\listoffigures
+\listoftables
+\clearpage
+\pagenumbering{arabic}
+
+\chapter{Purpose and Scope}
+
+This report defines the analysis boundary, mathematical model, verification
+method, and acceptance evidence for an illustrative attitude-estimation
+subsystem. Classical stochastic-estimation references such as
+\textcite{maybeck1979} provide the surrounding theory; project-specific
+assumptions must still be justified and controlled.
+
+\section{Objectives}
+
+\begin{LSRequirements}
+  \item\label{req:accuracy} The steady-state three-axis estimation error shall
+    remain below \qty{1.5}{\milli\radian} at the defined confidence level.
+  \item\label{req:rate} The implementation shall produce an estimate at
+    \qty{10}{\hertz} or faster under the target processor budget.
+  \item\label{req:traceability} Every reported result shall identify its model,
+    input data, software revision, and acceptance criterion.
+\end{LSRequirements}
+
+\section{Document Conventions}
+
+Vectors are bold lowercase, matrices are bold uppercase, and coordinate frames
+appear as right superscripts. SI units are typeset with \texttt{siunitx}; figures,
+tables, equations, and requirements are cross-referenced with \texttt{cleveref}.
+
+\chapter{Mathematical Model}
+
+\section{State Propagation}
+
+Let the attitude-error state be
+\begin{equation}
+  \vect{x}
+  =
+  \begin{bmatrix}
+    \delta\vect{\theta}^{\transpose} & \vect{b}^{\transpose}
+  \end{bmatrix}^{\transpose}
+  \in \Rset^{6},
+  \label{eq:state}
+\end{equation}
+where \(\delta\vect{\theta}\) is the small-angle error and \(\vect{b}\) is
+the gyro-bias estimate. A discrete linearization has the form
+\begin{align}
+  \vect{x}_{k+1} &= \mat{\Phi}_k\vect{x}_k + \mat{G}_k\vect{w}_k, \\
+  \mat{P}_{k+1}^{-} &=
+    \mat{\Phi}_k\mat{P}_{k}^{+}\mat{\Phi}_k^{\transpose}
+    + \mat{G}_k\mat{Q}_k\mat{G}_k^{\transpose}.
+  \label{eq:covariance}
+\end{align}
+
+The covariance update in \cref{eq:covariance} is only defensible when the
+process-noise model, units, sampling interval, and frame conventions are all
+explicit. For a full spacecraft-dynamics treatment, see \textcite{schaub2018}.
+
+\begin{LSWarning}[Model limitation]
+The illustrative equations omit normalization, finite-precision effects, and
+sensor timing error. Do not convert a teaching model into a design claim without
+closing those omissions.
+\end{LSWarning}
+
+\section{Geometry and Frames}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+    node distance=1.0in,
+    box/.style={draw=LSRule,fill=LSIce,rounded corners=2pt,minimum width=1.55in,minimum height=0.55in,align=center,font=\sffamily\small},
+    flow/.style={-{Latex[length=2.5mm]},very thick,draw=LSBlue}
+  ]
+    \node[box] (sensor) {Sensor samples};
+    \node[box,right=of sensor] (prop) {State propagation};
+    \node[box,right=of prop] (update) {Measurement update};
+    \node[box,below=0.55in of prop] (evidence) {Residuals and evidence};
+    \draw[flow] (sensor) -- (prop);
+    \draw[flow] (prop) -- (update);
+    \draw[flow] (update) |- (evidence);
+    \draw[flow] (evidence.north) -- (prop.south);
+  \end{tikzpicture}
+  \caption{Traceable estimation and verification flow.}
+  \label{fig:flow}
+\end{figure}
+
+\chapter{Verification Evidence}
+
+\section{Acceptance Matrix}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Illustrative verification matrix.}
+  \label{tab:verification}
+  \begin{tabularx}{\linewidth}{@{}p{0.95in}Y p{1.00in}p{0.75in}@{}}
+    \toprule
+    \textbf{Requirement} & \textbf{Method and evidence} & \textbf{Criterion} & \textbf{Status} \\
+    \midrule
+    \cref{req:accuracy} & Monte Carlo simulation with archived seeds, input set,
+      and percentile summary & \(<\qty{1.5}{\milli\radian}\) & Example \\
+    \cref{req:rate} & Hardware-in-the-loop timing profile with worst-case load &
+      \(\geq\qty{10}{\hertz}\) & Pending \\
+    \cref{req:traceability} & Configuration audit of report, data, code, and build
+      identifiers & Complete record & Pending \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\section{Plotting Quantitative Results}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+      linearspace,
+      width=0.88\linewidth,
+      height=2.75in,
+      xlabel={Time (s)},
+      ylabel={Angular error (mrad)},
+      xmin=0,xmax=10,
+      ymin=0,ymax=2.0,
+      legend columns=3,
+      legend to name=verificationlegend,
+    ]
+      \addplot table[x=time,y=error,col sep=comma]
+        {templates/shared-data/estimation-error.csv};
+      \addlegendentry{Observed error}
+      \addplot table[x=time,y=one_sigma,col sep=comma]
+        {templates/shared-data/estimation-error.csv};
+      \addlegendentry{One-sigma envelope}
+      \addplot table[x=time,y=requirement,col sep=comma]
+        {templates/shared-data/estimation-error.csv};
+      \addlegendentry{Requirement}
+    \end{axis}
+  \end{tikzpicture}
+  \par\vspace{0.08in}\ref{verificationlegend}
+  \caption{Synthetic convergence data rendered directly from CSV.}
+  \label{fig:convergence}
+\end{figure}
+
+\Cref{fig:convergence} demonstrates the preferred workflow: keep source data
+machine-readable, render vector plots in LaTeX, label units, and state the
+meaning of every curve. Do not infer compliance from appearance alone.
+
+\chapter{Conclusions and Release Checklist}
+
+\begin{LSKeyPoint}[Recommended disposition]
+Replace this paragraph with the decision, quantitative margin, open risks,
+owners, and due dates. Separate verified facts from engineering judgment.
+\end{LSKeyPoint}
+
+Before release, confirm that:
+\begin{itemize}
+  \item all requirements and interfaces are traceable;
+  \item plots are regenerated from controlled data, not screenshots;
+  \item units, coordinate frames, and uncertainty conventions are explicit;
+  \item classification, CUI, export-control, proprietary, and distribution
+    markings were assigned by the proper authority; and
+  \item the source, build directory, logs, auxiliary files, and PDF are stored
+    only in an authorized environment.
+\end{itemize}
+
+\printbibliography[heading=bibintoc]
+
+\appendix
+\chapter{Reusable Portion-Marking Examples}
+
+The following commands are intentionally shown as code rather than emitting
+controlled markings in this public template:
+\begin{lstlisting}[language={[LaTeX]TeX}]
+\LSU{Unclassified paragraph text.}
+\LSCUI[SP-CTI]{Controlled technical information.}
+\LSS{Secret portion text.}
+\LSTS{Top Secret portion text.}
+\end{lstlisting}
+See \texttt{docs/MARKINGS.md} before using any of them.
+
+\end{document}

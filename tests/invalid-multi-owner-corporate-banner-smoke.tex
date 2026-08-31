@@ -1,0 +1,13 @@
+% Expected failure before shipout: multi-owner corporate output uses the title-page pointer banner.
+\documentclass[letterpaper]{article}
+\usepackage{linearspace-markings}
+\LSMarkingSetup{
+  profile=corporate,
+  classification=none,
+  controls={proprietary},
+  proprietary-mode=multi-owner,
+  banner-text={CONFIDENTIAL}
+}
+\LSDeclareProprietaryOwner{Synthetic Owner Alpha}{First synthetic reviewed legend.}
+\LSDeclareProprietaryOwner{Synthetic Owner Beta}{Second synthetic reviewed legend.}
+\begin{document}This content must never render.\end{document}

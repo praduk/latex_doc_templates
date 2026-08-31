@@ -1,0 +1,18 @@
+% Expected failure before shipout: a preamble override must match final setup.
+\documentclass[letterpaper]{article}
+\usepackage{linearspace-markings}
+\LSMarkingSetup{
+  profile=cui-general,
+  classification=none,
+  controls={cui},
+  banner-text={CUI}
+}
+\LSThisPageBanner{CUI}
+\LSMarkingSetup{
+  banner-text={CUI//SP-CTI},
+  operator-confirms-controlled-environment=true,
+  controlled-by={Synthetic Agency Office},
+  cui-categories={Synthetic Test Category},
+  control-poc={test@example.invalid}
+}
+\begin{document}Synthetic test.\end{document}

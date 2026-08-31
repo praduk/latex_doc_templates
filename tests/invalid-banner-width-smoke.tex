@@ -1,0 +1,14 @@
+% Expected failure before shipout: mandatory banner text may not be cropped.
+\documentclass[letterpaper]{article}
+\usepackage{linearspace-markings}
+\LSMarkingSetup{
+  profile=cui-general,
+  classification=none,
+  controls={cui},
+  operator-confirms-controlled-environment=true,
+  banner-text={CUI//ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ},
+  controlled-by={Synthetic Agency Office},
+  cui-categories={Synthetic Test Category},
+  control-poc={test@example.invalid}
+}
+\begin{document}Synthetic test.\end{document}
